@@ -415,6 +415,53 @@ app.post('/api/inventory', async (req, res) => {
   }
 });
 
+app.put('/api/inventory/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = req.body;
+    const name = data.name || 'Insumo';
+    const code = data.code || id;
+    const payload = { ...data, id, name, code };
+
+    await query(
+      `UPDATE inventory_items SET name = $2, code = $3, data = $4 WHERE id = $1`,
+      [id, name, code, JSON.stringify(payload)]
+    );
+
+    return success(res, payload);
+  } catch (err) {
+    return error(res, err.message, 500);
+  }
+});
+
+app.post('/api/inventory/batch', async (req, res) => {
+  try {
+    const { items, companyId } = req.body;
+    if (!Array.isArray(items)) {
+      return error(res, 'Se requiere un arreglo de insumos en el campo items', 400);
+    }
+    const saved = [];
+    for (const item of items) {
+      const id = item.id || `INS-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`;
+      const cId = item.companyId || companyId || '';
+      const code = item.code || id;
+      const name = item.name || 'Insumo';
+      const payload = { ...item, id, companyId: cId, code, name };
+
+      await query(
+        `INSERT INTO inventory_items (id, company_id, code, name, data)
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (id) DO UPDATE SET company_id = $2, code = $3, name = $4, data = $5`,
+        [id, cId, code, name, JSON.stringify(payload)]
+      );
+      saved.push(payload);
+    }
+    return success(res, { count: saved.length, items: saved });
+  } catch (err) {
+    return error(res, err.message, 500);
+  }
+});
+
 app.delete('/api/inventory/:id', async (req, res) => {
   try {
     const { id } = req.params;

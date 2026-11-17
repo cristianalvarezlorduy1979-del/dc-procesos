@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { 
   Package, 
@@ -21,19 +21,30 @@ import {
   Building2, 
   Clock, 
   AlertCircle,
-  Download
+  Download,
+  Upload,
+  Percent,
+  MapPin,
+  TrendingDown
 } from 'lucide-react';
-import { updateInventoryItem, removeInventoryItem, removePhysicalInventory } from '../services/firebase';
+import { updateInventoryItem, removeInventoryItem, removePhysicalInventory, bulkImportInventoryItems } from '../services/firebase';
 
 export default function InventoryDashboardView({
   inventoryItems = [],
   physicalInventories = [],
   selectedCompany,
   onOpenNewItemModal,
-  onSwitchToMobile
+  onSwitchToMobile,
+  initialTab = 'catalog'
 }) {
-  const [activeTab, setActiveTab] = useState('counts'); // 'counts' | 'catalog'
+  const [activeTab, setActiveTab] = useState(initialTab || 'catalog'); // 'counts' | 'catalog'
   const [selectedInventory, setSelectedInventory] = useState(null);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
   
   // Filtros Catálogo
   const [catalogSearch, setCatalogSearch] = useState('');
@@ -42,9 +53,12 @@ export default function InventoryDashboardView({
   // Filtros Tomas
   const [countsSearch, setCountsSearch] = useState('');
 
-  // Edición rápida de costo unitario
+  // Edición rápida de costo unitario y merma esperada
   const [editingItemId, setEditingItemId] = useState(null);
   const [editingCost, setEditingCost] = useState('');
+  const [editingWasteId, setEditingWasteId] = useState(null);
+  const [editingWaste, setEditingWaste] = useState('');
+  const quickExcelRef = useRef(null);
 
   // Si no hay toma seleccionada y hay tomas disponibles, seleccionar la primera por defecto
   const currentSelectedInv = useMemo(() => {
@@ -114,6 +128,83 @@ export default function InventoryDashboardView({
       setEditingItemId(null);
     } catch (err) {
       alert('Error actualizando costo: ' + err.message);
+    }
+  };
+
+  // Manejar edición rápida de Merma Esperada (%)
+  const handleStartEditWaste = (item) => {
+    setEditingWasteId(item.id);
+    setEditingWaste(String(item.expectedWastePct !== undefined ? item.expectedWastePct : '0'));
+  };
+
+  const handleSaveWaste = async (itemId) => {
+    const numWaste = parseFloat(editingWaste);
+    if (isNaN(numWaste) || numWaste < 0 || numWaste > 100) {
+      alert('Por favor ingresa un porcentaje de merma válido entre 0% y 100%.');
+      return;
+    }
+    try {
+      await updateInventoryItem(itemId, { expectedWastePct: numWaste });
+      setEditingWasteId(null);
+    } catch (err) {
+      alert('Error actualizando merma esperada: ' + err.message);
+    }
+  };
+
+  // Carga rápida masiva desde Excel directo en la pestaña
+  const handleQuickExcelUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheet = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheet];
+      const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+      if (jsonRows.length === 0) {
+        alert('El archivo Excel está vacío.');
+        return;
+      }
+
+      const items = jsonRows.map((row, i) => {
+        const itemCode = row['Codigo'] || row['Código'] || row['code'] || `INS-${100 + i}`;
+        const itemName = row['Nombre_Insumo'] || row['Nombre'] || row['Insumo'] || row['name'] || '';
+        const itemCat = row['Categoria'] || row['Categoría'] || row['category'] || 'Cárnicos y Proteínas';
+        const itemUnit = row['Unidad_Medida'] || row['Unidad'] || row['unit'] || 'Kg';
+        const itemCost = parseFloat(String(row['Costo_Unitario'] || row['Costo'] || row['unitCost'] || 0).replace(/[^0-9.]/g, '')) || 0;
+        const itemWaste = parseFloat(String(row['Merma_Esperada_Pct'] || row['Merma_Esperada'] || row['Merma'] || row['expectedWastePct'] || 0).replace(/[^0-9.]/g, '')) || 0;
+        const itemStock = parseFloat(String(row['Stock_Inicial'] || row['Stock'] || row['currentStock'] || 0).replace(/[^0-9.]/g, '')) || 0;
+        const itemMinStock = parseFloat(String(row['Stock_Minimo'] || row['Stock_Mínimo'] || row['minStock'] || 0).replace(/[^0-9.]/g, '')) || 0;
+        const itemLoc = row['Ubicacion'] || row['Ubicación'] || row['location'] || 'Bodega Principal';
+
+        return {
+          code: String(itemCode).trim(),
+          name: String(itemName).trim(),
+          category: String(itemCat).trim(),
+          unit: String(itemUnit).trim(),
+          unitCost: itemCost,
+          expectedWastePct: itemWaste,
+          currentStock: itemStock,
+          minStock: itemMinStock,
+          location: String(itemLoc).trim(),
+          companyId: selectedCompany?.id || null,
+          companyName: selectedCompany?.name || null
+        };
+      }).filter(item => item.name && item.name.length > 0);
+
+      if (items.length === 0) {
+        alert('No se encontraron insumos válidos en el archivo. Verifica que tenga la columna "Nombre_Insumo".');
+        return;
+      }
+
+      await bulkImportInventoryItems(items, selectedCompany?.id);
+      alert(`¡Éxito! Se procesaron y actualizaron ${items.length} insumos correctamente.`);
+    } catch (err) {
+      alert('Error leyendo el archivo Excel: ' + err.message);
+    } finally {
+      if (quickExcelRef.current) quickExcelRef.current.value = '';
     }
   };
 
@@ -229,37 +320,72 @@ export default function InventoryDashboardView({
       'Código',
       'Nombre del Insumo',
       'Categoría',
-      'Unidad',
+      'Unidad de Medida',
       'Costo Unitario ($ COP)',
+      'Merma Esperada (%)',
       'Stock Teórico',
+      'Stock Mínimo',
+      'Valor Total Teórico ($ COP)',
+      'Ubicación en Bodega',
       'Empresa'
     ];
 
-    const rows = inventoryItems.map(item => [
-      item.code || '',
-      item.name || '',
-      item.category || '',
-      item.unit || '',
-      Number(item.unitCost) || 0,
-      Number(item.currentStock) || 0,
-      item.companyName || selectedCompany?.name || 'DC Procesos'
+    let grandTotalValued = 0;
+    const rows = inventoryItems.map(item => {
+      const cost = Number(item.unitCost) || 0;
+      const stock = Number(item.currentStock) || 0;
+      const itemValued = cost * stock;
+      grandTotalValued += itemValued;
+
+      return [
+        item.code || '',
+        item.name || '',
+        item.category || '',
+        item.unit || '',
+        cost,
+        Number(item.expectedWastePct) || 0,
+        stock,
+        Number(item.minStock) || 0,
+        itemValued,
+        item.location || 'Bodega Principal',
+        item.companyName || selectedCompany?.name || 'DC Procesos'
+      ];
+    });
+
+    // Fila de totales
+    rows.push([
+      'TOTAL',
+      'VALOR TOTAL DEL INVENTARIO TEÓRICO',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      grandTotalValued,
+      '',
+      ''
     ]);
 
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
     ws['!cols'] = [
-      { wch: 16 }, // Código
+      { wch: 14 }, // Código
       { wch: 35 }, // Nombre
-      { wch: 24 }, // Categoría
-      { wch: 16 }, // Unidad
+      { wch: 25 }, // Categoría
+      { wch: 18 }, // Unidad
       { wch: 22 }, // Costo Unitario
-      { wch: 16 }, // Stock
-      { wch: 28 }  // Empresa
+      { wch: 20 }, // Merma %
+      { wch: 16 }, // Stock Teórico
+      { wch: 16 }, // Stock Mínimo
+      { wch: 24 }, // Valor Total
+      { wch: 25 }, // Ubicación
+      { wch: 25 }  // Empresa
     ];
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Catalogo_Insumos');
 
-    XLSX.writeFile(wb, `Catalogo_Insumos_Costos_${new Date().toISOString().split('T')[0]}.xlsx`);
+    XLSX.writeFile(wb, `DC_Procesos_Catalogo_Insumos_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   // Descargar Plantilla Excel para Catálogo de Insumos (.xlsx)
@@ -270,15 +396,19 @@ export default function InventoryDashboardView({
       'Categoria',
       'Unidad_Medida',
       'Costo_Unitario',
-      'Stock_Inicial'
+      'Merma_Esperada_Pct',
+      'Stock_Inicial',
+      'Stock_Minimo',
+      'Ubicacion'
     ];
 
     const demoRows = [
-      ['INS-101', 'Canal de Res (Media Canal)', 'Cárnicos y Proteínas', 'Kg', 18500, 450],
-      ['INS-102', 'Lomo de Cerdo Especial', 'Cárnicos y Proteínas', 'Kg', 14200, 280],
-      ['INS-103', 'Sal Nitrificada Especial', 'Insumos y Aditivos', 'Kg', 8500, 40],
-      ['INS-104', 'Tripa de Cerdo 28/30', 'Insumos y Aditivos', 'Madejas', 65000, 12],
-      ['INS-105', 'Bolsa al Vacío 20x30 cm', 'Material de Empaque', 'Millar', 180000, 3]
+      ['INS-101', 'Canal de Res (Media Canal)', 'Cárnicos y Proteínas', 'Kg', 18500, 15.5, 450, 80, 'Cuarto Frío 1'],
+      ['INS-102', 'Lomo de Cerdo Especial', 'Cárnicos y Proteínas', 'Kg', 14200, 12.0, 280, 50, 'Cuarto Frío 1'],
+      ['INS-103', 'Pechuga de Pollo Fresca', 'Cárnicos y Proteínas', 'Kg', 12500, 8.5, 150, 40, 'Nevera Aves'],
+      ['INS-104', 'Sal Nitrificada Especial', 'Insumos y Aditivos', 'Kg', 8500, 1.0, 40, 10, 'Estante Secos B1'],
+      ['INS-105', 'Tripa de Cerdo Calibre 28/30', 'Insumos y Aditivos', 'Madejas', 65000, 3.0, 12, 3, 'Refrigeración Insumos'],
+      ['INS-106', 'Bolsa al Vacío 20x30 cm', 'Material de Empaque', 'Millar', 180000, 0.5, 3, 1, 'Almacén Empaque C1']
     ];
 
     const ws = XLSX.utils.aoa_to_sheet([headers, ...demoRows]);
@@ -288,7 +418,10 @@ export default function InventoryDashboardView({
       { wch: 25 },
       { wch: 18 },
       { wch: 18 },
-      { wch: 16 }
+      { wch: 20 },
+      { wch: 16 },
+      { wch: 16 },
+      { wch: 24 }
     ];
 
     const wb = XLSX.utils.book_new();
@@ -693,77 +826,183 @@ export default function InventoryDashboardView({
       {activeTab === 'catalog' && (
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
           
-          {/* Barra de Filtros y Búsqueda */}
-          <div className="p-4 border-b border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2 w-full sm:w-auto flex-1 max-w-md">
+          {/* Barra de Filtros, Búsqueda y Acciones Excel */}
+          <div className="p-4 border-b border-slate-200 bg-slate-50/70 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+            
+            {/* Buscador y Filtro por Categoría */}
+            <div className="flex flex-col sm:flex-row items-center gap-2 flex-1 max-w-xl">
               <div className="relative w-full">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 <input
                   type="text"
                   value={catalogSearch}
                   onChange={(e) => setCatalogSearch(e.target.value)}
-                  placeholder="Buscar por nombre o código..."
-                  className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="Buscar insumo por nombre o código..."
+                  className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
                 />
+              </div>
+
+              <div className="flex items-center gap-1.5 w-full sm:w-auto shrink-0">
+                <Filter className="w-3.5 h-3.5 text-slate-500" />
+                <select
+                  value={catalogCategoryFilter}
+                  onChange={(e) => setCatalogCategoryFilter(e.target.value)}
+                  className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-medium outline-none focus:ring-2 focus:ring-emerald-500 w-full sm:w-auto"
+                >
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>
+                      {cat === 'ALL' ? 'Todas las Categorías' : cat}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-              <span className="text-xs text-slate-500 font-bold flex items-center gap-1">
-                <Filter className="w-3.5 h-3.5" /> Categoría:
-              </span>
-              <select
-                value={catalogCategoryFilter}
-                onChange={(e) => setCatalogCategoryFilter(e.target.value)}
-                className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-medium outline-none focus:ring-2 focus:ring-emerald-500"
+            {/* Botones de Excel: Descargar Plantilla, Subir Excel, Exportar */}
+            <div className="flex flex-wrap items-center gap-2 justify-end">
+              <button
+                type="button"
+                onClick={handleDownloadCatalogTemplateExcel}
+                className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
+                title="Descargar plantilla de Excel oficial para importar insumos"
               >
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>
-                    {cat === 'ALL' ? 'Todas las Categorías' : cat}
-                  </option>
-                ))}
-              </select>
+                <Download className="w-3.5 h-3.5 text-slate-600" />
+                <span className="hidden sm:inline">Plantilla</span> Excel
+              </button>
+
+              <label className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-2xs transition flex items-center gap-1.5 cursor-pointer">
+                <Upload className="w-3.5 h-3.5" />
+                <span>Subir Excel</span>
+                <input
+                  type="file"
+                  ref={quickExcelRef}
+                  accept=".xlsx,.xls,.csv"
+                  onChange={handleQuickExcelUpload}
+                  className="hidden"
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={handleExportCatalogExcel}
+                className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
+                title="Exportar todo el catálogo con costos y existencias a Excel"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Exportar Catálogo</span>
+              </button>
             </div>
+
           </div>
 
-          {/* Tabla de Catálogo */}
+          {/* Tabla de Catálogo de Insumos */}
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
                 <tr>
                   <th className="p-3">Código</th>
-                  <th className="p-3">Nombre del Insumo / Materia Prima</th>
+                  <th className="p-3">Insumo / Materia Prima</th>
                   <th className="p-3">Categoría</th>
                   <th className="p-3">Unidad</th>
+                  <th className="p-3 text-right">Merma Esperada (%)</th>
                   <th className="p-3 text-right">Costo Unitario ($ COP)</th>
+                  <th className="p-3 text-center">Stock Teórico</th>
+                  <th className="p-3">Ubicación Bodega</th>
                   <th className="p-3 text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredCatalog.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="p-8 text-center text-slate-400 text-xs">
+                    <td colSpan="9" className="p-12 text-center text-slate-400 text-xs">
                       No se encontraron insumos con los filtros actuales.
                     </td>
                   </tr>
                 ) : (
                   filteredCatalog.map(item => {
-                    const isEditing = editingItemId === item.id;
+                    const isEditingCost = editingItemId === item.id;
+                    const isEditingWaste = editingWasteId === item.id;
+                    const wasteVal = Number(item.expectedWastePct) || 0;
+                    const isLowStock = Number(item.minStock) > 0 && Number(item.currentStock) <= Number(item.minStock);
 
                     return (
                       <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="p-3 font-mono font-bold text-slate-600">{item.code}</td>
-                        <td className="p-3 font-bold text-slate-900">{item.name}</td>
-                        <td className="p-3 text-slate-500 text-[11px]">{item.category}</td>
-                        <td className="p-3">
-                          <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+                        
+                        {/* Código */}
+                        <td className="p-3 font-mono font-bold text-slate-600 whitespace-nowrap">
+                          {item.code}
+                        </td>
+
+                        {/* Nombre */}
+                        <td className="p-3 font-bold text-slate-900">
+                          {item.name}
+                        </td>
+
+                        {/* Categoría */}
+                        <td className="p-3 text-slate-500 text-[11px] whitespace-nowrap">
+                          {item.category}
+                        </td>
+
+                        {/* Unidad */}
+                        <td className="p-3 whitespace-nowrap">
+                          <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-bold text-[10px]">
                             {item.unit}
                           </span>
                         </td>
-                        
-                        {/* Costo con Edición Rápida */}
-                        <td className="p-3 text-right font-bold text-slate-800">
-                          {isEditing ? (
+
+                        {/* Merma Esperada % con Edición Rápida */}
+                        <td className="p-3 text-right font-bold whitespace-nowrap">
+                          {isEditingWaste ? (
+                            <div className="flex items-center justify-end gap-1">
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.1"
+                                value={editingWaste}
+                                onChange={(e) => setEditingWaste(e.target.value)}
+                                className="w-16 px-1.5 py-1 bg-white border border-amber-500 rounded text-right font-bold text-xs outline-none"
+                              />
+                              <span className="text-xs text-slate-400">%</span>
+                              <button
+                                onClick={() => handleSaveWaste(item.id)}
+                                className="p-1 bg-amber-600 text-white rounded hover:bg-amber-700 cursor-pointer"
+                                title="Guardar merma"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => setEditingWasteId(null)}
+                                className="p-1 bg-slate-200 text-slate-600 rounded hover:bg-slate-300 cursor-pointer"
+                                title="Cancelar"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-end gap-1.5">
+                              {wasteVal > 0 ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-bold">
+                                  <TrendingDown className="w-3 h-3 text-amber-600" />
+                                  {wasteVal}%
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 text-[11px]">0.0%</span>
+                              )}
+                              <button
+                                onClick={() => handleStartEditWaste(item)}
+                                title="Modificar merma esperada"
+                                className="text-slate-400 hover:text-amber-600 p-0.5 transition cursor-pointer"
+                              >
+                                <Edit3 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Costo Unitario con Edición Rápida */}
+                        <td className="p-3 text-right font-bold text-slate-800 whitespace-nowrap">
+                          {isEditingCost ? (
                             <div className="flex items-center justify-end gap-1">
                               <span className="text-slate-400 text-xs">$</span>
                               <input
@@ -776,28 +1015,28 @@ export default function InventoryDashboardView({
                               />
                               <button
                                 onClick={() => handleSaveCost(item.id)}
-                                className="p-1 bg-emerald-600 text-white rounded hover:bg-emerald-700"
+                                className="p-1 bg-emerald-600 text-white rounded hover:bg-emerald-700 cursor-pointer"
                                 title="Guardar costo"
                               >
                                 <Check className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => setEditingItemId(null)}
-                                className="p-1 bg-slate-200 text-slate-600 rounded hover:bg-slate-300"
+                                className="p-1 bg-slate-200 text-slate-600 rounded hover:bg-slate-300 cursor-pointer"
                                 title="Cancelar"
                               >
                                 <X className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           ) : (
-                            <div className="flex items-center justify-end gap-2">
-                              <span className="text-emerald-700 font-black">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <span className="text-emerald-700 font-black text-xs">
                                 {formatCOP(item.unitCost)}
                               </span>
                               <button
                                 onClick={() => handleStartEditCost(item)}
                                 title="Modificar costo unitario"
-                                className="text-slate-400 hover:text-emerald-600 p-0.5 transition"
+                                className="text-slate-400 hover:text-emerald-600 p-0.5 transition cursor-pointer"
                               >
                                 <Edit3 className="w-3.5 h-3.5" />
                               </button>
@@ -805,16 +1044,39 @@ export default function InventoryDashboardView({
                           )}
                         </td>
 
+                        {/* Stock Teórico y Alerta */}
+                        <td className="p-3 text-center whitespace-nowrap">
+                          <div className="inline-flex flex-col items-center">
+                            <span className="font-bold text-slate-900 text-xs">
+                              {item.currentStock || 0} {item.unit}
+                            </span>
+                            {isLowStock && (
+                              <span className="text-[9px] font-bold text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.2 rounded mt-0.5">
+                                Stock Bajo (Mín: {item.minStock})
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Ubicación en Bodega */}
+                        <td className="p-3 text-slate-600 text-[11px] whitespace-nowrap">
+                          <div className="flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span>{item.location || 'Bodega Principal'}</span>
+                          </div>
+                        </td>
+
                         {/* Acciones */}
-                        <td className="p-3 text-center">
+                        <td className="p-3 text-center whitespace-nowrap">
                           <button
                             onClick={() => handleDeleteItem(item.id, item.name)}
                             title="Eliminar insumo del catálogo"
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </td>
+
                       </tr>
                     );
                   })

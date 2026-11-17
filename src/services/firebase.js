@@ -46,7 +46,10 @@ export const INITIAL_DEMO_INVENTORY_ITEMS = [
     category: 'Materia Prima Cárnica',
     unit: 'Kg',
     unitCost: 18500,
+    expectedWastePct: 15.5,
     currentStock: 450,
+    minStock: 80,
+    location: 'Cuarto Frío 1 (Canales)',
     createdAt: '2026-01-15T08:00:00Z'
   },
   {
@@ -56,7 +59,10 @@ export const INITIAL_DEMO_INVENTORY_ITEMS = [
     category: 'Materia Prima Cárnica',
     unit: 'Kg',
     unitCost: 14200,
+    expectedWastePct: 12.0,
     currentStock: 280,
+    minStock: 50,
+    location: 'Cuarto Frío 1 (Canales)',
     createdAt: '2026-01-15T08:00:00Z'
   },
   {
@@ -66,7 +72,10 @@ export const INITIAL_DEMO_INVENTORY_ITEMS = [
     category: 'Materia Prima Cárnica',
     unit: 'Kg',
     unitCost: 12500,
+    expectedWastePct: 8.5,
     currentStock: 150,
+    minStock: 40,
+    location: 'Nevera Aves (0-2°C)',
     createdAt: '2026-01-15T08:00:00Z'
   },
   {
@@ -76,7 +85,10 @@ export const INITIAL_DEMO_INVENTORY_ITEMS = [
     category: 'Insumos y Aditivos',
     unit: 'Kg',
     unitCost: 8500,
+    expectedWastePct: 1.0,
     currentStock: 40,
+    minStock: 10,
+    location: 'Estante Secos B1',
     createdAt: '2026-01-15T08:00:00Z'
   },
   {
@@ -86,7 +98,10 @@ export const INITIAL_DEMO_INVENTORY_ITEMS = [
     category: 'Insumos y Aditivos',
     unit: 'Kg',
     unitCost: 24000,
+    expectedWastePct: 1.5,
     currentStock: 25,
+    minStock: 5,
+    location: 'Estante Secos B2',
     createdAt: '2026-01-15T08:00:00Z'
   },
   {
@@ -96,7 +111,10 @@ export const INITIAL_DEMO_INVENTORY_ITEMS = [
     category: 'Insumos y Aditivos',
     unit: 'Madejas',
     unitCost: 65000,
+    expectedWastePct: 3.0,
     currentStock: 12,
+    minStock: 3,
+    location: 'Refrigeración Insumos',
     createdAt: '2026-01-15T08:00:00Z'
   },
   {
@@ -106,7 +124,10 @@ export const INITIAL_DEMO_INVENTORY_ITEMS = [
     category: 'Material de Empaque',
     unit: 'Millar',
     unitCost: 180000,
+    expectedWastePct: 0.5,
     currentStock: 3,
+    minStock: 1,
+    location: 'Almacén Empaque C1',
     createdAt: '2026-01-15T08:00:00Z'
   },
   {
@@ -116,7 +137,10 @@ export const INITIAL_DEMO_INVENTORY_ITEMS = [
     category: 'Material de Empaque',
     unit: 'Unidades',
     unitCost: 4200,
+    expectedWastePct: 0.0,
     currentStock: 120,
+    minStock: 25,
+    location: 'Almacén Empaque C2',
     createdAt: '2026-01-15T08:00:00Z'
   }
 ];
@@ -1427,9 +1451,22 @@ export const createInventoryItem = async (itemData) => {
     ...itemData,
     code: itemData.code || `INS-${String(Math.floor(Math.random() * 900) + 100)}`,
     unitCost: Number(itemData.unitCost) || 0,
+    expectedWastePct: Number(itemData.expectedWastePct) || 0,
     currentStock: Number(itemData.currentStock) || 0,
+    minStock: Number(itemData.minStock) || 0,
+    location: itemData.location || 'Bodega Principal',
     createdAt: new Date().toISOString()
   };
+
+  // 1. Sincronizar en Netcup PostgreSQL API si está disponible
+  try {
+    const netcupRes = await apiClient.post('/inventory', newItem);
+    if (netcupRes && netcupRes.id) {
+      newItem.id = netcupRes.id;
+    }
+  } catch (e) {
+    // Modo offline / standalone
+  }
 
   if (isFirebaseConfigured && db) {
     const docRef = await addDoc(collection(db, 'inventory_items'), {
@@ -1439,17 +1476,35 @@ export const createInventoryItem = async (itemData) => {
     return { id: docRef.id, ...newItem };
   } else {
     const items = getLocalInventoryItems();
-    const created = { id: 'INS-' + Date.now(), ...newItem };
+    const created = { id: newItem.id || ('INS-' + Date.now()), ...newItem };
     items.unshift(created);
     setLocalInventoryItems(items);
     return created;
   }
 };
 
-// Importar múltiples insumos masivamente
-export const bulkImportInventoryItems = async (itemsList) => {
+// Importar múltiples insumos masivamente (Crear o Actualizar)
+export const bulkImportInventoryItems = async (itemsList, companyId = null) => {
+  const cleanItems = itemsList.map(item => ({
+    ...item,
+    code: item.code || `INS-${String(Math.floor(Math.random() * 900) + 100)}`,
+    unitCost: Number(item.unitCost) || 0,
+    expectedWastePct: Number(item.expectedWastePct) || 0,
+    currentStock: Number(item.currentStock) || 0,
+    minStock: Number(item.minStock) || 0,
+    location: item.location || 'Bodega Principal',
+    updatedAt: new Date().toISOString()
+  }));
+
+  // Sincronizar por lotes en Netcup PostgreSQL
+  try {
+    await apiClient.post('/inventory/batch', { items: cleanItems, companyId });
+  } catch (e) {
+    // Continuar local / firebase
+  }
+
   const results = [];
-  for (const item of itemsList) {
+  for (const item of cleanItems) {
     const res = await createInventoryItem(item);
     results.push(res);
   }
@@ -1461,9 +1516,19 @@ export const updateInventoryItem = async (itemId, updates) => {
   const cleanUpdates = {
     ...updates,
     unitCost: updates.unitCost !== undefined ? Number(updates.unitCost) : undefined,
+    expectedWastePct: updates.expectedWastePct !== undefined ? Number(updates.expectedWastePct) : undefined,
     currentStock: updates.currentStock !== undefined ? Number(updates.currentStock) : undefined,
+    minStock: updates.minStock !== undefined ? Number(updates.minStock) : undefined,
+    location: updates.location !== undefined ? updates.location : undefined,
     updatedAt: new Date().toISOString()
   };
+
+  // Sincronizar en Netcup PostgreSQL API
+  try {
+    await apiClient.put(`/inventory/${itemId}`, cleanUpdates);
+  } catch (e) {
+    // Continuar
+  }
 
   if (isFirebaseConfigured && db) {
     const docRef = doc(db, 'inventory_items', itemId);
@@ -1481,6 +1546,14 @@ export const updateInventoryItem = async (itemId, updates) => {
 // Eliminar un Insumo
 export const removeInventoryItem = async (itemId) => {
   if (!itemId) return;
+
+  // Sincronizar en Netcup PostgreSQL API
+  try {
+    await apiClient.delete(`/inventory/${itemId}`);
+  } catch (e) {
+    // Continuar
+  }
+
   if (isFirebaseConfigured && db) {
     try {
       const docRef = doc(db, 'inventory_items', itemId);

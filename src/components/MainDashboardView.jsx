@@ -23,7 +23,8 @@ import {
   Package,
   ClipboardList,
   Users,
-  ChevronDown
+  ChevronDown,
+  Boxes
 } from 'lucide-react';
 import { removeProcessOrder } from '../services/firebase';
 import InventoryDashboardView from './InventoryDashboardView';
@@ -341,17 +342,42 @@ export default function MainDashboardView({
             </button>
           )}
 
-          {/* Módulo 2: Inventarios */}
+          {/* Módulo Insumos y Materias Primas */}
+          {activeMainModule === 'insumos' ? (
+            <div className="bg-[#4338ca] text-white rounded-xl px-4 py-2.5 shadow-md flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+                <Boxes className="w-4 h-4 text-white" />
+              </div>
+              <div className="text-left leading-tight">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-200">MATERIAS PRIMAS & COSTOS</p>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs sm:text-sm font-black">Insumos</span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 font-mono">{inventoryItems.length}</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setActiveMainModule('insumos')}
+              className="px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 font-bold text-xs sm:text-sm flex items-center gap-2 shadow-2xs transition"
+            >
+              <Boxes className="w-4 h-4 text-slate-600" />
+              <span>Insumos</span>
+              <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-mono">{inventoryItems.length}</span>
+            </button>
+          )}
+
+          {/* Módulo Inventarios Físicos */}
           {activeMainModule === 'inventory' ? (
             <div className="bg-[#4338ca] text-white rounded-xl px-4 py-2.5 shadow-md flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
-                <Package className="w-4 h-4 text-white" />
+                <ClipboardList className="w-4 h-4 text-white" />
               </div>
               <div className="text-left leading-tight">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-200">INVENTARIOS Y TOMAS</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-200">TOMAS FÍSICAS</p>
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs sm:text-sm font-black">Inventarios Físicos</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 font-mono">{inventoryItems.length}</span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 font-mono">{physicalInventories.length}</span>
                 </div>
               </div>
             </div>
@@ -360,9 +386,9 @@ export default function MainDashboardView({
               onClick={() => setActiveMainModule('inventory')}
               className="px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 font-bold text-xs sm:text-sm flex items-center gap-2 shadow-2xs transition"
             >
-              <Package className="w-4 h-4 text-slate-600" />
-              <span>Inventarios</span>
-              <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-mono">{inventoryItems.length}</span>
+              <ClipboardList className="w-4 h-4 text-slate-600" />
+              <span>Inventarios Físicos</span>
+              <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-mono">{physicalInventories.length}</span>
             </button>
           )}
 
@@ -487,12 +513,21 @@ export default function MainDashboardView({
       {/* ========================================================================= */}
       {/* 3. VISTAS DE CONTENIDO SEGÚN MÓDULO ACTIVO                                */}
       {/* ========================================================================= */}
-      {activeMainModule === 'inventory' ? (
+      {activeMainModule === 'insumos' ? (
         <InventoryDashboardView
           inventoryItems={inventoryItems}
           physicalInventories={physicalInventories}
           selectedCompany={selectedCompany}
           onOpenNewItemModal={onOpenNewInventoryItemModal}
+          initialTab="catalog"
+        />
+      ) : activeMainModule === 'inventory' ? (
+        <InventoryDashboardView
+          inventoryItems={inventoryItems}
+          physicalInventories={physicalInventories}
+          selectedCompany={selectedCompany}
+          onOpenNewItemModal={onOpenNewInventoryItemModal}
+          initialTab="counts"
         />
       ) : activeMainModule === 'waste' ? (
         <WasteReportsView
@@ -511,6 +546,7 @@ export default function MainDashboardView({
       ) : activeMainModule === 'templates' ? (
         <ProcessTemplatesView
           processTemplates={processTemplates}
+          inventoryItems={inventoryItems}
           selectedCompany={selectedCompany}
           onOpenNewTemplateModal={onOpenNewProcessTemplateModal}
           onEditTemplate={onEditProcessTemplate}

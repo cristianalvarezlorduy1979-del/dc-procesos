@@ -11,7 +11,10 @@ import {
   Check, 
   AlertCircle,
   Download,
-  Upload
+  Upload,
+  Percent,
+  MapPin,
+  TrendingDown
 } from 'lucide-react';
 import { createInventoryItem, bulkImportInventoryItems } from '../services/firebase';
 
@@ -20,6 +23,9 @@ const CATEGORIES = [
   'Insumos y Aditivos',
   'Material de Empaque',
   'Condimentos y Especias',
+  'Lácteos y Derivados',
+  'Frutas y Verduras',
+  'Granos y Harinas',
   'Químicos y Aseo',
   'Otros'
 ];
@@ -31,12 +37,13 @@ const UNITS = [
   'Millar',
   'Madejas',
   'Litros',
+  'Mililitros',
   'Cajas',
   'Bolsas',
   'Metros'
 ];
 
-export default function NewInventoryItemModal({ isOpen, onClose, selectedCompany }) {
+export default function NewInventoryItemModal({ isOpen, onClose, selectedCompany, existingItems = [] }) {
   const [activeTab, setActiveTab] = useState('single'); // 'single' | 'bulk'
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -46,9 +53,12 @@ export default function NewInventoryItemModal({ isOpen, onClose, selectedCompany
   const [category, setCategory] = useState('Cárnicos y Proteínas');
   const [unit, setUnit] = useState('Kg');
   const [unitCost, setUnitCost] = useState('');
+  const [expectedWastePct, setExpectedWastePct] = useState('0');
   const [currentStock, setCurrentStock] = useState('');
+  const [minStock, setMinStock] = useState('');
+  const [location, setLocation] = useState('');
 
-  // Carga Masiva (Copiar y Pegar o Subir Archivo Excel)
+  // Carga Masiva (Excel / Pegar)
   const fileInputRef = useRef(null);
   const [bulkText, setBulkText] = useState('');
   const [parsedItems, setParsedItems] = useState([]);
@@ -56,7 +66,7 @@ export default function NewInventoryItemModal({ isOpen, onClose, selectedCompany
 
   if (!isOpen) return null;
 
-  // Descargar Plantilla Excel de Insumos (.xlsx)
+  // Descargar Plantilla Excel Oficial (.xlsx) con columnas completas
   const handleDownloadTemplateExcel = () => {
     const headers = [
       'Codigo',
@@ -64,25 +74,32 @@ export default function NewInventoryItemModal({ isOpen, onClose, selectedCompany
       'Categoria',
       'Unidad_Medida',
       'Costo_Unitario',
-      'Stock_Inicial'
+      'Merma_Esperada_Pct',
+      'Stock_Inicial',
+      'Stock_Minimo',
+      'Ubicacion'
     ];
 
     const demoRows = [
-      ['INS-101', 'Canal de Res (Media Canal)', 'Cárnicos y Proteínas', 'Kg', 18500, 450],
-      ['INS-102', 'Lomo de Cerdo Especial', 'Cárnicos y Proteínas', 'Kg', 14200, 280],
-      ['INS-103', 'Sal Nitrificada Especial', 'Insumos y Aditivos', 'Kg', 8500, 40],
-      ['INS-104', 'Tripa de Cerdo Calibre 28/30', 'Insumos y Aditivos', 'Madejas', 65000, 12],
-      ['INS-105', 'Bolsa al Vacío 20x30 cm', 'Material de Empaque', 'Millar', 180000, 3]
+      ['INS-101', 'Canal de Res (Media Canal)', 'Cárnicos y Proteínas', 'Kg', 18500, 15.5, 450, 80, 'Cuarto Frío 1'],
+      ['INS-102', 'Lomo de Cerdo Especial', 'Cárnicos y Proteínas', 'Kg', 14200, 12.0, 280, 50, 'Cuarto Frío 1'],
+      ['INS-103', 'Pechuga de Pollo Fresca', 'Cárnicos y Proteínas', 'Kg', 12500, 8.5, 150, 40, 'Nevera Aves'],
+      ['INS-104', 'Sal Nitrificada Especial', 'Insumos y Aditivos', 'Kg', 8500, 1.0, 40, 10, 'Estante Secos B1'],
+      ['INS-105', 'Tripa de Cerdo Calibre 28/30', 'Insumos y Aditivos', 'Madejas', 65000, 3.0, 12, 3, 'Refrigeración Insumos'],
+      ['INS-106', 'Bolsa al Vacío 20x30 cm', 'Material de Empaque', 'Millar', 180000, 0.5, 3, 1, 'Almacén Empaque C1']
     ];
 
     const ws = XLSX.utils.aoa_to_sheet([headers, ...demoRows]);
     ws['!cols'] = [
-      { wch: 14 },
-      { wch: 35 },
-      { wch: 25 },
-      { wch: 18 },
-      { wch: 18 },
-      { wch: 16 }
+      { wch: 14 }, // Codigo
+      { wch: 35 }, // Nombre
+      { wch: 25 }, // Categoria
+      { wch: 16 }, // Unidad
+      { wch: 18 }, // Costo
+      { wch: 20 }, // Merma %
+      { wch: 16 }, // Stock Inicial
+      { wch: 16 }, // Stock Minimo
+      { wch: 24 }  // Ubicacion
     ];
 
     const wb = XLSX.utils.book_new();
@@ -111,10 +128,13 @@ export default function NewInventoryItemModal({ isOpen, onClose, selectedCompany
       const items = jsonRows.map((row, i) => {
         const itemCode = row['Codigo'] || row['Código'] || row['code'] || `INS-${100 + i}`;
         const itemName = row['Nombre_Insumo'] || row['Nombre'] || row['Insumo'] || row['name'] || '';
-        const itemCat = row['Categoria'] || row['Categoría'] || row['category'] || 'Insumos y Aditivos';
+        const itemCat = row['Categoria'] || row['Categoría'] || row['category'] || 'Cárnicos y Proteínas';
         const itemUnit = row['Unidad_Medida'] || row['Unidad'] || row['unit'] || 'Kg';
         const itemCost = parseFloat(String(row['Costo_Unitario'] || row['Costo'] || row['unitCost'] || 0).replace(/[^0-9.]/g, '')) || 0;
+        const itemWaste = parseFloat(String(row['Merma_Esperada_Pct'] || row['Merma_Esperada'] || row['Merma'] || row['expectedWastePct'] || 0).replace(/[^0-9.]/g, '')) || 0;
         const itemStock = parseFloat(String(row['Stock_Inicial'] || row['Stock'] || row['currentStock'] || 0).replace(/[^0-9.]/g, '')) || 0;
+        const itemMinStock = parseFloat(String(row['Stock_Minimo'] || row['Stock_Mínimo'] || row['minStock'] || 0).replace(/[^0-9.]/g, '')) || 0;
+        const itemLoc = row['Ubicacion'] || row['Ubicación'] || row['location'] || 'Bodega Principal';
 
         return {
           code: String(itemCode).trim(),
@@ -122,7 +142,10 @@ export default function NewInventoryItemModal({ isOpen, onClose, selectedCompany
           category: String(itemCat).trim(),
           unit: String(itemUnit).trim(),
           unitCost: itemCost,
+          expectedWastePct: itemWaste,
           currentStock: itemStock,
+          minStock: itemMinStock,
+          location: String(itemLoc).trim(),
           companyId: selectedCompany?.id || null,
           companyName: selectedCompany?.name || null
         };
@@ -147,7 +170,10 @@ export default function NewInventoryItemModal({ isOpen, onClose, selectedCompany
     setCategory('Cárnicos y Proteínas');
     setUnit('Kg');
     setUnitCost('');
+    setExpectedWastePct('0');
     setCurrentStock('');
+    setMinStock('');
+    setLocation('');
     setBulkText('');
     setParsedItems([]);
     setBulkError('');
@@ -178,7 +204,10 @@ export default function NewInventoryItemModal({ isOpen, onClose, selectedCompany
         category,
         unit,
         unitCost: Number(unitCost),
+        expectedWastePct: parseFloat(expectedWastePct) || 0,
         currentStock: Number(currentStock) || 0,
+        minStock: Number(minStock) || 0,
+        location: location.trim() || 'Bodega Principal',
         companyId: selectedCompany?.id || null,
         companyName: selectedCompany?.name || null
       });
@@ -191,7 +220,7 @@ export default function NewInventoryItemModal({ isOpen, onClose, selectedCompany
     }
   };
 
-  // Analizar texto pegado de Excel (tab o comas)
+  // Analizar texto pegado de Excel
   const handleParseBulk = () => {
     setBulkError('');
     if (!bulkText.trim()) {
@@ -206,7 +235,6 @@ export default function NewInventoryItemModal({ isOpen, onClose, selectedCompany
       const line = lines[i].trim();
       if (!line) continue;
 
-      // Detectar separador (tabulación de Excel o coma o punto y coma)
       let cols = [];
       if (line.includes('\t')) {
         cols = line.split('\t').map(c => c.trim());
@@ -218,26 +246,35 @@ export default function NewInventoryItemModal({ isOpen, onClose, selectedCompany
         cols = [line];
       }
 
-      // Si es encabezado común, saltar
       const lower0 = (cols[0] || '').toLowerCase();
       if (lower0.includes('codigo') || lower0.includes('nombre') || lower0.includes('insumo') || lower0.includes('item')) {
         continue;
       }
 
-      // Formatos soportados:
-      // Formato 1: Código | Nombre | Categoría | Unidad | Costo
-      // Formato 2: Nombre | Unidad | Costo
-      // Formato 3: Nombre | Costo
       let itemCode = '';
       let itemName = '';
-      let itemCat = 'Insumos y Aditivos';
+      let itemCat = 'Cárnicos y Proteínas';
       let itemUnit = 'Kg';
       let itemCost = 0;
+      let itemWaste = 0;
+      let itemStock = 0;
+      let itemMinStock = 0;
+      let itemLoc = 'Bodega Principal';
 
-      if (cols.length >= 5) {
+      if (cols.length >= 6) {
         itemCode = cols[0];
         itemName = cols[1];
-        itemCat = cols[2] || 'Insumos y Aditivos';
+        itemCat = cols[2] || 'Cárnicos y Proteínas';
+        itemUnit = cols[3] || 'Kg';
+        itemCost = parseFloat(cols[4].replace(/[^0-9.]/g, '')) || 0;
+        itemWaste = parseFloat(cols[5].replace(/[^0-9.]/g, '')) || 0;
+        itemStock = cols[6] ? parseFloat(cols[6].replace(/[^0-9.]/g, '')) || 0 : 0;
+        itemMinStock = cols[7] ? parseFloat(cols[7].replace(/[^0-9.]/g, '')) || 0 : 0;
+        itemLoc = cols[8] || 'Bodega Principal';
+      } else if (cols.length === 5) {
+        itemCode = cols[0];
+        itemName = cols[1];
+        itemCat = cols[2] || 'Cárnicos y Proteínas';
         itemUnit = cols[3] || 'Kg';
         itemCost = parseFloat(cols[4].replace(/[^0-9.]/g, '')) || 0;
       } else if (cols.length === 4) {
@@ -263,7 +300,10 @@ export default function NewInventoryItemModal({ isOpen, onClose, selectedCompany
           category: itemCat,
           unit: itemUnit,
           unitCost: itemCost,
-          currentStock: 0,
+          expectedWastePct: itemWaste,
+          currentStock: itemStock,
+          minStock: itemMinStock,
+          location: itemLoc,
           companyId: selectedCompany?.id || null,
           companyName: selectedCompany?.name || null
         });
@@ -271,7 +311,7 @@ export default function NewInventoryItemModal({ isOpen, onClose, selectedCompany
     }
 
     if (items.length === 0) {
-      setBulkError('No se pudieron detectar insumos válidos. Revisa el formato o los datos pegados.');
+      setBulkError('No se pudieron detectar insumos válidos. Revisa los datos pegados.');
     } else {
       setParsedItems(items);
     }
@@ -283,8 +323,8 @@ export default function NewInventoryItemModal({ isOpen, onClose, selectedCompany
 
     try {
       setIsSubmitting(true);
-      await bulkImportInventoryItems(parsedItems);
-      alert(`¡Se importaron exitosamente ${parsedItems.length} insumos al catálogo!`);
+      await bulkImportInventoryItems(parsedItems, selectedCompany?.id);
+      alert(`¡Se importaron / actualizaron exitosamente ${parsedItems.length} insumos en el catálogo!`);
       handleClose();
     } catch (err) {
       alert('Error en importación masiva: ' + err.message);
@@ -312,15 +352,15 @@ export default function NewInventoryItemModal({ isOpen, onClose, selectedCompany
               <Package className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold">Montar Insumos para Inventario</h2>
+              <h2 className="text-lg font-bold">Módulo de Insumos & Materias Primas</h2>
               <p className="text-xs text-slate-300">
-                {selectedCompany ? `Empresa: ${selectedCompany.name}` : 'Catálogo General de Insumos'}
+                {selectedCompany ? `Empresa: ${selectedCompany.name}` : 'Catálogo Oficial de Insumos'}
               </p>
             </div>
           </div>
           <button
             onClick={handleClose}
-            className="text-slate-400 hover:text-white p-1 rounded-lg transition-colors"
+            className="text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -330,7 +370,7 @@ export default function NewInventoryItemModal({ isOpen, onClose, selectedCompany
         <div className="flex border-b border-slate-200 bg-slate-50 px-4 pt-3 gap-2">
           <button
             onClick={() => setActiveTab('single')}
-            className={`px-4 py-2 text-xs font-bold rounded-t-lg transition-all flex items-center gap-2 border-b-2 ${
+            className={`px-4 py-2 text-xs font-bold rounded-t-lg transition-all flex items-center gap-2 border-b-2 cursor-pointer ${
               activeTab === 'single'
                 ? 'bg-white text-emerald-700 border-emerald-600 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 border-transparent'
@@ -341,14 +381,14 @@ export default function NewInventoryItemModal({ isOpen, onClose, selectedCompany
           </button>
           <button
             onClick={() => setActiveTab('bulk')}
-            className={`px-4 py-2 text-xs font-bold rounded-t-lg transition-all flex items-center gap-2 border-b-2 ${
+            className={`px-4 py-2 text-xs font-bold rounded-t-lg transition-all flex items-center gap-2 border-b-2 cursor-pointer ${
               activeTab === 'bulk'
                 ? 'bg-white text-emerald-700 border-emerald-600 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 border-transparent'
             }`}
           >
             <FileSpreadsheet className="w-4 h-4" />
-            Carga Masiva (Pegar desde Excel)
+            Carga Masiva desde Excel (.xlsx)
           </button>
         </div>
 
@@ -396,11 +436,12 @@ export default function NewInventoryItemModal({ isOpen, onClose, selectedCompany
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Ej: Pierna de Cerdo Deshuesada, Condimento Especial..."
+                  placeholder="Ej: Canal de Res, Lomo de Cerdo, Pasta de Tomate, Bolsa al Vacío..."
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition"
                 />
               </div>
 
+              {/* Fila: Unidad, Costo Unitario, Merma Esperada % */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
@@ -442,8 +483,32 @@ export default function NewInventoryItemModal({ isOpen, onClose, selectedCompany
                 </div>
 
                 <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+                    <span>Merma Esperada (%)</span>
+                    <TrendingDown className="w-3.5 h-3.5 text-amber-600" />
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value={expectedWastePct}
+                      onChange={(e) => setExpectedWastePct(e.target.value)}
+                      placeholder="0.0"
+                      className="w-full pr-7 px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-amber-700 focus:ring-2 focus:ring-amber-500 focus:bg-white outline-none transition"
+                    />
+                    <span className="absolute right-3 top-2 text-slate-400 font-bold text-xs">%</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400">Pérdida esperada en proceso</span>
+                </div>
+              </div>
+
+              {/* Fila: Stock Actual, Stock Mínimo, Ubicación */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Stock Teórico Inicial (Opcional)
+                    Stock Teórico Inicial
                   </label>
                   <input
                     type="number"
@@ -455,12 +520,41 @@ export default function NewInventoryItemModal({ isOpen, onClose, selectedCompany
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition"
                   />
                 </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Stock Mínimo (Alerta)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={minStock}
+                    onChange={(e) => setMinStock(e.target.value)}
+                    placeholder="Ej: 50"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
+                    <MapPin className="w-3 h-3 text-slate-500" />
+                    <span>Ubicación en Bodega</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="Ej: Cuarto Frío 1, Estante B2..."
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition"
+                  />
+                </div>
               </div>
 
               <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-900 flex items-start gap-2">
                 <Sparkles className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                 <p>
-                  <strong>Valorización Inmediata:</strong> Cada vez que los operarios registren conteos de este insumo en sus teléfonos celulares, el sistema multiplicará automáticamente la cantidad contada por <strong>{unitCost ? formatCOP(unitCost) : '$0'}</strong>.
+                  <strong>Integración Automática:</strong> Este insumo estará disponible inmediatamente para armar <strong>Subrecetas</strong> (con cálculo automático de costos) y en la <strong>Toma Física Móvil</strong> para que los operarios registren el conteo físico valorizado.
                 </p>
               </div>
 
@@ -468,165 +562,177 @@ export default function NewInventoryItemModal({ isOpen, onClose, selectedCompany
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="px-4 py-2 border border-slate-300 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 transition"
+                  className="px-4 py-2 border border-slate-300 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition flex items-center gap-2 disabled:opacity-50"
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition flex items-center gap-2 disabled:opacity-50 cursor-pointer"
                 >
                   {isSubmitting ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Guardando...</span>
                   ) : (
-                    <Check className="w-4 h-4" />
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Guardar Insumo</span>
+                    </>
                   )}
-                  Guardar Insumo en Catálogo
                 </button>
               </div>
             </form>
           ) : (
-            /* Carga Masiva desde Excel */
-            <div className="space-y-4">
+            /* ========================================================== */
+            /* PESTAÑA 2: CARGA MASIVA DE EXCEL CON MERMA Y COSTOS       */
+            /* ========================================================== */
+            <div className="space-y-5">
               
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileUploadExcel}
-                accept=".xlsx, .xls"
-                className="hidden"
-              />
-
-              {/* Botones de Acción Excel */}
-              <div className="flex flex-wrap items-center justify-between gap-2.5 p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-2xl">
+              {/* Opciones de carga: Botón Subir Archivo + Descargar Plantilla */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div>
-                  <h4 className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
-                    <FileSpreadsheet className="w-4 h-4 text-emerald-700" />
-                    <span>Carga Masiva con Archivo Excel (.xlsx / .xls)</span>
-                  </h4>
-                  <p className="text-[11px] text-emerald-800/80 mt-0.5">
-                    Descarga la plantilla oficial en Excel, llénala con tus insumos y súbela directamente.
+                  <h4 className="text-xs font-bold text-slate-800">Cargar Archivo Excel Oficial (.xlsx)</h4>
+                  <p className="text-[11px] text-slate-500">
+                    Sube tu archivo con columnas de código, nombre, categoría, unidad, costo, merma y stock.
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
                     onClick={handleDownloadTemplateExcel}
-                    className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-2xs transition"
+                    className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-bold shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
+                    title="Descargar plantilla de Excel con formato oficial"
                   >
-                    <Download className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Descargar Plantilla Excel</span>
+                    <Download className="w-3.5 h-3.5 text-slate-600" />
+                    <span>Descargar Plantilla</span>
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition"
-                  >
+                  <label className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-2xs transition flex items-center gap-1.5 cursor-pointer">
                     <Upload className="w-3.5 h-3.5" />
-                    <span>Subir Archivo Excel</span>
-                  </button>
+                    <span>Subir Excel</span>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      accept=".xlsx,.xls,.csv"
+                      onChange={handleFileUploadExcel}
+                      className="hidden"
+                    />
+                  </label>
                 </div>
               </div>
 
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-700">
-                <p className="font-bold mb-1 flex items-center gap-1.5 text-slate-800">
-                  <span>O también puedes copiar y pegar celdas desde Excel aquí:</span>
-                </p>
-                <ul className="list-disc list-inside text-[11px] text-slate-600 mt-1 font-mono">
-                  <li><strong>Opción completa:</strong> Código | Nombre | Categoría | Unidad | Costo Unitario</li>
-                  <li><strong>Opción rápida:</strong> Nombre | Unidad | Costo Unitario</li>
-                </ul>
-              </div>
-
+              {/* O bien, pegar directamente desde Excel */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Pega aquí el contenido copiado de Excel (Opcional):
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-700">
+                    O pega las celdas copiadas directamente desde Excel:
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleParseBulk}
+                    className="text-xs font-bold text-emerald-700 hover:text-emerald-800 underline cursor-pointer"
+                  >
+                    Procesar texto pegado
+                  </button>
+                </div>
                 <textarea
                   rows="4"
                   value={bulkText}
                   onChange={(e) => setBulkText(e.target.value)}
-                  placeholder={`Ejemplo:\nINS-011\tCarne de Res Magra\tCárnicos y Proteínas\tKg\t24500\nINS-012\tPimienta Negra Molida\tInsumos y Aditivos\tKg\t32000`}
-                  className="w-full p-3 font-mono text-xs bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition"
+                  placeholder="Ejemplo: Copia las filas desde Excel (Código | Nombre | Categoría | Unidad | Costo | Merma) y pégalas aquí..."
+                  className="w-full p-3 bg-slate-50 border border-slate-300 rounded-lg text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition"
                 />
               </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleParseBulk}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5"
-                >
-                  <Sparkles className="w-4 h-4 text-emerald-400" />
-                  Analizar Texto Pegado
-                </button>
-                {parsedItems.length > 0 && (
-                  <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
-                    ✓ {parsedItems.length} insumos listos para importar
-                  </span>
-                )}
-              </div>
-
               {bulkError && (
-                <div className="bg-red-50 text-red-700 text-xs p-3 rounded-xl border border-red-200 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
+                <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
                   <span>{bulkError}</span>
                 </div>
               )}
 
-              {/* Previsualización de ítems analizados */}
+              {/* Vista previa de los insumos detectados */}
               {parsedItems.length > 0 && (
-                <div className="border border-slate-200 rounded-xl overflow-hidden max-h-56 overflow-y-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-100 text-slate-600 font-bold border-b border-slate-200 sticky top-0">
-                      <tr>
-                        <th className="p-2">Código</th>
-                        <th className="p-2">Nombre</th>
-                        <th className="p-2">Categoría</th>
-                        <th className="p-2">Unidad</th>
-                        <th className="p-2 text-right">Costo Unitario</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {parsedItems.map((item, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50">
-                          <td className="p-2 font-mono text-slate-500">{item.code}</td>
-                          <td className="p-2 font-medium text-slate-800">{item.name}</td>
-                          <td className="p-2 text-slate-600 text-[11px]">{item.category}</td>
-                          <td className="p-2 text-slate-600 font-bold">{item.unit}</td>
-                          <td className="p-2 text-right font-bold text-emerald-700">
+                <div className="border border-slate-200 rounded-xl overflow-hidden">
+                  <div className="bg-slate-100 px-3 py-2 flex items-center justify-between border-b border-slate-200">
+                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <Check className="w-4 h-4 text-emerald-600" />
+                      Insumos listos para cargar: <strong>{parsedItems.length}</strong>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setParsedItems([])}
+                      className="text-[11px] text-slate-500 hover:text-red-600 cursor-pointer"
+                    >
+                      Limpiar lista
+                    </button>
+                  </div>
+                  <div className="max-h-56 overflow-y-auto divide-y divide-slate-100">
+                    {parsedItems.map((item, idx) => (
+                      <div key={idx} className="p-2.5 flex items-center justify-between hover:bg-slate-50 text-xs">
+                        <div className="min-w-0 pr-3">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">
+                              {item.code}
+                            </span>
+                            <span className="font-bold text-slate-900 truncate">{item.name}</span>
+                          </div>
+                          <div className="text-[10px] text-slate-500 flex items-center gap-2 mt-0.5">
+                            <span>{item.category}</span>
+                            <span>•</span>
+                            <span>{item.unit}</span>
+                            {item.expectedWastePct > 0 && (
+                              <>
+                                <span>•</span>
+                                <span className="text-amber-700 font-bold">Merma: {item.expectedWastePct}%</span>
+                              </>
+                            )}
+                            {item.location && (
+                              <>
+                                <span>•</span>
+                                <span>{item.location}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="font-bold text-emerald-700 block">
                             {formatCOP(item.unitCost)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                          </span>
+                          <span className="text-[10px] text-slate-400">
+                            Stock: {item.currentStock} {item.unit}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="px-4 py-2 border border-slate-300 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 transition"
+                  className="px-4 py-2 border border-slate-300 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="button"
                   onClick={handleSubmitBulk}
-                  disabled={isSubmitting || parsedItems.length === 0}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition flex items-center gap-2 disabled:opacity-50"
+                  disabled={parsedItems.length === 0 || isSubmitting}
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition flex items-center gap-2 disabled:opacity-50 cursor-pointer"
                 >
                   {isSubmitting ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Guardando {parsedItems.length} insumos...</span>
                   ) : (
-                    <Check className="w-4 h-4" />
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Importar {parsedItems.length} Insumos</span>
+                    </>
                   )}
-                  Importar {parsedItems.length > 0 ? `(${parsedItems.length})` : ''} Insumos
                 </button>
               </div>
+
             </div>
           )}
         </div>

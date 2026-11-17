@@ -130,6 +130,10 @@ export default function MobileInventoryCountView({
         category: item.category || 'Insumos',
         unit: item.unit || 'Kg',
         unitCost: Number(item.unitCost) || 0,
+        expectedWastePct: Number(item.expectedWastePct) || 0,
+        location: item.location || '',
+        theoreticalStock: Number(item.currentStock) || 0,
+        difference: (counts[item.id] || 0) - (Number(item.currentStock) || 0),
         countedQty: counts[item.id] || 0,
         totalValued: (counts[item.id] || 0) * (Number(item.unitCost) || 0)
       }));
@@ -297,17 +301,32 @@ export default function MobileInventoryCountView({
                 {/* Encabezado del Ítem */}
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-0.5">
+                    <div className="flex flex-wrap items-center gap-1.5 mb-1">
                       <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600">
                         {item.code}
                       </span>
                       <span className="text-[10px] text-slate-500 font-medium truncate">
                         {item.category}
                       </span>
+                      {item.location && (
+                        <span className="text-[10px] bg-blue-50 text-blue-700 font-medium px-1.5 py-0.5 rounded border border-blue-100">
+                          📍 {item.location}
+                        </span>
+                      )}
+                      {Number(item.expectedWastePct) > 0 && (
+                        <span className="text-[10px] bg-amber-50 text-amber-700 font-medium px-1.5 py-0.5 rounded border border-amber-200">
+                          Merma: {item.expectedWastePct}%
+                        </span>
+                      )}
                     </div>
                     <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">
                       {item.name}
                     </h3>
+                    {item.currentStock !== undefined && item.currentStock !== null && (
+                      <p className="text-[10px] text-slate-400 mt-0.5">
+                        Stock Teórico: <span className="font-bold text-slate-600">{item.currentStock} {item.unit}</span>
+                      </p>
+                    )}
                   </div>
 
                   {/* Unidad y Costo Unitario */}
@@ -379,16 +398,39 @@ export default function MobileInventoryCountView({
                     </div>
                   </div>
 
-                  {/* Subtotal Valorizado en tiempo real por ítem */}
+                  {/* Subtotal Valorizado en tiempo real por ítem y discrepancia */}
                   {isCounted && (
-                    <div className="mt-2 pt-2 border-t border-emerald-100 flex items-center justify-between text-xs font-bold text-emerald-800">
-                      <span className="flex items-center gap-1 text-[11px] text-emerald-700 font-semibold">
-                        <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
-                        Valorización de este ítem:
-                      </span>
-                      <span className="text-sm font-black text-emerald-700">
-                        {formatCOP(lineSubtotal)}
-                      </span>
+                    <div className="mt-2 pt-2 border-t border-emerald-100 space-y-1">
+                      <div className="flex items-center justify-between text-xs font-bold text-emerald-800">
+                        <span className="flex items-center gap-1 text-[11px] text-emerald-700 font-semibold">
+                          <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+                          Valorización de este ítem:
+                        </span>
+                        <span className="text-sm font-black text-emerald-700">
+                          {formatCOP(lineSubtotal)}
+                        </span>
+                      </div>
+                      {item.currentStock !== undefined && item.currentStock !== null && (
+                        <div className="flex items-center justify-between text-[11px] font-medium pt-1 border-t border-emerald-100/60">
+                          <span className="text-slate-500">Diferencia vs Teórico:</span>
+                          {(() => {
+                            const diff = countedQty - Number(item.currentStock);
+                            const isZero = Math.abs(diff) < 0.001;
+                            const isPositive = diff > 0;
+                            return (
+                              <span className={`font-bold px-2 py-0.5 rounded text-[10px] ${
+                                isZero 
+                                  ? 'bg-slate-100 text-slate-700' 
+                                  : isPositive 
+                                    ? 'bg-emerald-100 text-emerald-800' 
+                                    : 'bg-red-100 text-red-800'
+                              }`}>
+                                {isZero ? 'Exacto (0)' : `${isPositive ? '+' : ''}${diff.toFixed(2)} ${item.unit}`}
+                              </span>
+                            );
+                          })()}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

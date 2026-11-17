@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Layers, Plus, Check, Info, Droplet, Bone, Flame, Scale, Scissors, AlertCircle, Trash2, UtensilsCrossed, PackagePlus } from 'lucide-react';
+import { X, Layers, Plus, Check, Info, Droplet, Bone, Flame, Scale, Scissors, AlertCircle, Trash2, UtensilsCrossed, PackagePlus, DollarSign, TrendingDown } from 'lucide-react';
 import { createProcessTemplate, updateProcessTemplate } from '../services/firebase';
 
 export default function NewProcessTemplateModal({ 
@@ -75,15 +75,58 @@ export default function NewProcessTemplateModal({
     }
   };
 
+  // Helper para buscar insumo por nombre o ID en el catálogo
+  const findInvItem = (nameOrId) => {
+    if (!nameOrId) return null;
+    return inventoryItems.find(i => 
+      i.id === nameOrId || 
+      i.code?.toLowerCase() === String(nameOrId).toLowerCase() || 
+      i.name?.toLowerCase() === String(nameOrId).toLowerCase()
+    );
+  };
+
+  const formatCOP = (val) => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      maximumFractionDigits: 0
+    }).format(val || 0);
+  };
+
+  // Cálculo en vivo del costo de la subreceta
+  const recipeCostSummary = React.useMemo(() => {
+    let totalCost = 0;
+    let totalWeight = 0;
+
+    recipe.forEach(ing => {
+      const matched = findInvItem(ing.inventoryItemId || ing.name);
+      const cost = Number(ing.unitCost) || Number(matched?.unitCost) || 0;
+      const qty = Number(ing.standardQty) || 0;
+      totalCost += (qty * cost);
+
+      if (['Kg', 'g', 'Gramos'].includes(ing.unit)) {
+        totalWeight += (ing.unit === 'g' || ing.unit === 'Gramos') ? qty / 1000 : qty;
+      }
+    });
+
+    const yieldNum = Number(expectedYield) || 0;
+    const costPerUnit = yieldNum > 0 ? (totalCost / yieldNum) : totalCost;
+
+    return { totalCost, totalWeight, costPerUnit };
+  }, [recipe, inventoryItems, expectedYield]);
+
   // Manejo de Ingredientes de la Receta
   const handleAddIngredient = () => {
     setRecipe(prev => [
       ...prev,
       {
         id: `ING-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        inventoryItemId: '',
         name: '',
         standardQty: 1,
         unit: 'Kg',
+        unitCost: 0,
+        expectedWastePct: 0,
         notes: ''
       }
     ]);
@@ -92,7 +135,20 @@ export default function NewProcessTemplateModal({
   const handleUpdateIngredient = (index, field, value) => {
     setRecipe(prev => {
       const next = [...prev];
-      next[index] = { ...next[index], [field]: value };
+      const updated = { ...next[index], [field]: value };
+
+      // Si cambió el nombre, intentar auto-vincular costo y unidad del catálogo
+      if (field === 'name') {
+        const matched = findInvItem(value);
+        if (matched) {
+          updated.inventoryItemId = matched.id;
+          updated.unit = matched.unit || updated.unit || 'Kg';
+          updated.unitCost = Number(matched.unitCost) || 0;
+          updated.expectedWastePct = Number(matched.expectedWastePct) || 0;
+        }
+      }
+
+      next[index] = updated;
       return next;
     });
   };
@@ -107,9 +163,12 @@ export default function NewProcessTemplateModal({
       ...prev,
       {
         id: `ING-${Date.now()}-${invItem.id || Math.floor(Math.random() * 1000)}`,
+        inventoryItemId: invItem.id,
         name: invItem.name,
         standardQty: 1,
         unit: invItem.unit || 'Kg',
+        unitCost: Number(invItem.unitCost) || 0,
+        expectedWastePct: Number(invItem.expectedWastePct) || 0,
         notes: ''
       }
     ]);
@@ -370,83 +429,145 @@ export default function NewProcessTemplateModal({
               </div>
             ) : (
               <div className="space-y-2 bg-slate-50/80 p-3 rounded-2xl border border-slate-200">
+                
+                {/* Banner de Costeo Automático de la Subreceta */}
+                {recipeCostSummary.totalCost > 0 && (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs mb-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold">
+                        <DollarSign className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold uppercase text-emerald-800 tracking-wider block">
+                          Costo Total de Insumos (Subreceta)
+                        </span>
+                        <span className="text-base font-black text-emerald-950">
+                          {formatCOP(recipeCostSummary.totalCost)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] text-slate-500 uppercase font-bold block">
+                        Costo por {unit} (Rend. {expectedYield}%)
+                      </span>
+                      <span className="text-xs font-black text-slate-800">
+                        {formatCOP(recipeCostSummary.costPerUnit)} / {unit}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 <div className="hidden sm:grid sm:grid-cols-12 gap-2 text-[10px] font-black uppercase tracking-wider text-slate-500 px-1">
-                  <div className="col-span-5">Ingrediente / Materia Prima</div>
+                  <div className="col-span-4">Ingrediente / Materia Prima</div>
                   <div className="col-span-2 text-center">Cant. Estándar</div>
                   <div className="col-span-2">Unidad</div>
-                  <div className="col-span-2">Indicaciones / Notas</div>
+                  <div className="col-span-2 text-right">Costo / Subtotal</div>
+                  <div className="col-span-1">Notas</div>
                   <div className="col-span-1 text-center">Quitar</div>
                 </div>
 
-                {recipe.map((ing, idx) => (
-                  <div key={ing.id || idx} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs">
-                    <div className="sm:col-span-5">
-                      <span className="sm:hidden text-[10px] font-bold text-slate-500 block mb-0.5">Ingrediente:</span>
-                      <input
-                        type="text"
-                        list="inventory-autocomplete-list"
-                        value={ing.name}
-                        onChange={(e) => handleUpdateIngredient(idx, 'name', e.target.value)}
-                        placeholder="Ej. Pasta de Tomate / Carne / Sal"
-                        className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-900 outline-none focus:ring-1 focus:ring-emerald-500"
-                        required
-                      />
-                    </div>
+                {recipe.map((ing, idx) => {
+                  const matched = findInvItem(ing.inventoryItemId || ing.name);
+                  const cost = Number(ing.unitCost) || Number(matched?.unitCost) || 0;
+                  const qty = Number(ing.standardQty) || 0;
+                  const subtotal = qty * cost;
+                  const waste = Number(ing.expectedWastePct) || Number(matched?.expectedWastePct) || 0;
 
-                    <div className="sm:col-span-2">
-                      <span className="sm:hidden text-[10px] font-bold text-slate-500 block mb-0.5">Cant. Estándar:</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={ing.standardQty}
-                        onChange={(e) => handleUpdateIngredient(idx, 'standardQty', e.target.value)}
-                        placeholder="1.0"
-                        className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-900 text-center outline-none focus:ring-1 focus:ring-emerald-500"
-                        required
-                      />
-                    </div>
+                  return (
+                    <div key={ing.id || idx} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs">
+                      
+                      {/* Nombre con autocompletado */}
+                      <div className="sm:col-span-4">
+                        <span className="sm:hidden text-[10px] font-bold text-slate-500 block mb-0.5">Ingrediente:</span>
+                        <input
+                          type="text"
+                          list="inventory-autocomplete-list"
+                          value={ing.name}
+                          onChange={(e) => handleUpdateIngredient(idx, 'name', e.target.value)}
+                          placeholder="Ej. Pasta de Tomate / Carne / Sal"
+                          className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-900 outline-none focus:ring-1 focus:ring-emerald-500"
+                          required
+                        />
+                        {waste > 0 && (
+                          <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-700 bg-amber-50 px-1 py-0.2 rounded mt-0.5">
+                            <TrendingDown className="w-2.5 h-2.5" /> Merma: {waste}%
+                          </span>
+                        )}
+                      </div>
 
-                    <div className="sm:col-span-2">
-                      <span className="sm:hidden text-[10px] font-bold text-slate-500 block mb-0.5">Unidad:</span>
-                      <select
-                        value={ing.unit || 'Kg'}
-                        onChange={(e) => handleUpdateIngredient(idx, 'unit', e.target.value)}
-                        className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-emerald-500"
-                      >
-                        <option value="Kg">Kg</option>
-                        <option value="Litros">Litros</option>
-                        <option value="g">Gramos (g)</option>
-                        <option value="ml">Mililitros (ml)</option>
-                        <option value="Unidades">Unidades</option>
-                        <option value="Madejas">Madejas</option>
-                        <option value="Paquetes">Paquetes</option>
-                      </select>
-                    </div>
+                      {/* Cantidad */}
+                      <div className="sm:col-span-2">
+                        <span className="sm:hidden text-[10px] font-bold text-slate-500 block mb-0.5">Cant. Estándar:</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={ing.standardQty}
+                          onChange={(e) => handleUpdateIngredient(idx, 'standardQty', e.target.value)}
+                          placeholder="1.0"
+                          className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-900 text-center outline-none focus:ring-1 focus:ring-emerald-500"
+                          required
+                        />
+                      </div>
 
-                    <div className="sm:col-span-2">
-                      <span className="sm:hidden text-[10px] font-bold text-slate-500 block mb-0.5">Notas / Opcional:</span>
-                      <input
-                        type="text"
-                        value={ing.notes || ''}
-                        onChange={(e) => handleUpdateIngredient(idx, 'notes', e.target.value)}
-                        placeholder="Ej. al hervir"
-                        className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] text-slate-600 outline-none focus:ring-1 focus:ring-emerald-500"
-                      />
-                    </div>
+                      {/* Unidad */}
+                      <div className="sm:col-span-2">
+                        <span className="sm:hidden text-[10px] font-bold text-slate-500 block mb-0.5">Unidad:</span>
+                        <select
+                          value={ing.unit || 'Kg'}
+                          onChange={(e) => handleUpdateIngredient(idx, 'unit', e.target.value)}
+                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-emerald-500"
+                        >
+                          <option value="Kg">Kg</option>
+                          <option value="Litros">Litros</option>
+                          <option value="g">Gramos (g)</option>
+                          <option value="ml">Mililitros (ml)</option>
+                          <option value="Unidades">Unidades</option>
+                          <option value="Madejas">Madejas</option>
+                          <option value="Paquetes">Paquetes</option>
+                        </select>
+                      </div>
 
-                    <div className="sm:col-span-1 flex justify-center">
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveIngredient(idx)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                        title="Eliminar ingrediente"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {/* Costo / Subtotal */}
+                      <div className="sm:col-span-2 text-right">
+                        <span className="sm:hidden text-[10px] font-bold text-slate-500 block mb-0.5">Subtotal:</span>
+                        <span className="text-xs font-bold text-emerald-800 block">
+                          {formatCOP(subtotal)}
+                        </span>
+                        {cost > 0 && (
+                          <span className="text-[9px] text-slate-400 block">
+                            @{formatCOP(cost)}/{ing.unit || 'Kg'}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Notas */}
+                      <div className="sm:col-span-1">
+                        <span className="sm:hidden text-[10px] font-bold text-slate-500 block mb-0.5">Notas:</span>
+                        <input
+                          type="text"
+                          value={ing.notes || ''}
+                          onChange={(e) => handleUpdateIngredient(idx, 'notes', e.target.value)}
+                          placeholder="Ej. al hervir"
+                          className="w-full px-1.5 py-1 bg-slate-50 border border-slate-200 rounded text-[10px] text-slate-600 outline-none focus:ring-1 focus:ring-emerald-500"
+                        />
+                      </div>
+
+                      {/* Quitar */}
+                      <div className="sm:col-span-1 flex justify-center">
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveIngredient(idx)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                          title="Eliminar ingrediente"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
 
                 <div className="flex items-center justify-between pt-1 text-[11px] text-slate-500 font-semibold px-1">
                   <span>Total ingredientes en fórmula: <strong>{recipe.length}</strong></span>

@@ -18,13 +18,15 @@ import {
   ArrowRight,
   UtensilsCrossed,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  DollarSign
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { removeProcessTemplate, importProcessTemplatesBatch } from '../services/firebase';
 
 export default function ProcessTemplatesView({
   processTemplates = [],
+  inventoryItems = [],
   selectedCompany,
   onOpenNewTemplateModal,
   onEditTemplate,
@@ -53,6 +55,29 @@ export default function ProcessTemplatesView({
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 3500);
+  };
+
+  const formatCOP = (val) => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      maximumFractionDigits: 0
+    }).format(val || 0);
+  };
+
+  // Cálculo de costo dinámico de la subreceta basado en el catálogo actual de insumos
+  const calculateTemplateCost = (template) => {
+    if (!Array.isArray(template.recipe) || template.recipe.length === 0) return 0;
+    return template.recipe.reduce((total, ing) => {
+      const matched = inventoryItems.find(it => 
+        it.id === ing.inventoryItemId || 
+        it.name?.toLowerCase() === ing.name?.toLowerCase() ||
+        it.code?.toLowerCase() === ing.name?.toLowerCase()
+      );
+      const cost = Number(ing.unitCost) || Number(matched?.unitCost) || 0;
+      const qty = Number(ing.standardQty) || 0;
+      return total + (cost * qty);
+    }, 0);
   };
 
   // ==========================================
@@ -433,52 +458,96 @@ export default function ProcessTemplatesView({
                     </p>
                   )}
 
-                  {/* Receta e Ingredientes Preestablecidos */}
+                  {/* Receta e Ingredientes Preestablecidos con Costeo Automático */}
                   <div className="mt-3 pt-3 border-t border-slate-100">
-                    <button
-                      type="button"
-                      onClick={() => setExpandedRecipeId(expandedRecipeId === template.id ? null : template.id)}
-                      className="w-full flex items-center justify-between text-left p-2 rounded-xl bg-emerald-50/70 hover:bg-emerald-100/70 text-emerald-950 transition border border-emerald-200/60"
-                    >
-                      <div className="flex items-center gap-1.5 text-xs font-bold">
-                        <UtensilsCrossed className="w-3.5 h-3.5 text-emerald-700" />
-                        <span>Receta ({Array.isArray(template.recipe) ? template.recipe.length : 0} ingredientes)</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-[11px] text-emerald-700 font-semibold">
-                        <span>{expandedRecipeId === template.id ? 'Ocultar' : 'Ver receta'}</span>
-                        {expandedRecipeId === template.id ? (
-                          <ChevronUp className="w-3.5 h-3.5" />
-                        ) : (
-                          <ChevronDown className="w-3.5 h-3.5" />
-                        )}
-                      </div>
-                    </button>
+                    {(() => {
+                      const templateCost = calculateTemplateCost(template);
+                      const isExpanded = expandedRecipeId === template.id;
 
-                    {expandedRecipeId === template.id && (
-                      <div className="mt-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5 animate-fadeIn">
-                        {Array.isArray(template.recipe) && template.recipe.length > 0 ? (
-                          <div className="space-y-1">
-                            {template.recipe.map((ing, i) => (
-                              <div key={ing.id || i} className="flex items-center justify-between text-xs py-1 border-b border-slate-200/60 last:border-none">
-                                <span className="font-semibold text-slate-800">{ing.name}</span>
-                                <div className="text-right">
-                                  <span className="font-mono font-bold text-emerald-700 bg-emerald-100/60 px-1.5 py-0.5 rounded text-[11px]">
-                                    {ing.standardQty} {ing.unit}
-                                  </span>
-                                  {ing.notes && (
-                                    <span className="text-[10px] text-slate-400 block">{ing.notes}</span>
-                                  )}
-                                </div>
+                      return (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setExpandedRecipeId(isExpanded ? null : template.id)}
+                            className="w-full flex items-center justify-between text-left p-2.5 rounded-xl bg-emerald-50/70 hover:bg-emerald-100/70 text-emerald-950 transition border border-emerald-200/60 cursor-pointer"
+                          >
+                            <div className="flex items-center gap-1.5 text-xs font-bold">
+                              <UtensilsCrossed className="w-3.5 h-3.5 text-emerald-700" />
+                              <span>Subreceta ({Array.isArray(template.recipe) ? template.recipe.length : 0} insumos)</span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              {templateCost > 0 && (
+                                <span className="px-2 py-0.5 rounded-lg bg-emerald-600 text-white font-black text-[11px] shadow-2xs">
+                                  {formatCOP(templateCost)}
+                                </span>
+                              )}
+                              <div className="flex items-center gap-1 text-[11px] text-emerald-700 font-semibold">
+                                <span>{isExpanded ? 'Ocultar' : 'Ver receta'}</span>
+                                {isExpanded ? (
+                                  <ChevronUp className="w-3.5 h-3.5" />
+                                ) : (
+                                  <ChevronDown className="w-3.5 h-3.5" />
+                                )}
                               </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-[11px] text-slate-400 italic text-center py-1">
-                            Sin ingredientes aún. Edita el proceso para agregarlos.
-                          </p>
-                        )}
-                      </div>
-                    )}
+                            </div>
+                          </button>
+
+                          {isExpanded && (
+                            <div className="mt-2 p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2 animate-fadeIn">
+                              {Array.isArray(template.recipe) && template.recipe.length > 0 ? (
+                                <>
+                                  <div className="space-y-1.5 divide-y divide-slate-200/60">
+                                    {template.recipe.map((ing, i) => {
+                                      const matched = inventoryItems.find(it => 
+                                        it.id === ing.inventoryItemId || 
+                                        it.name?.toLowerCase() === ing.name?.toLowerCase() ||
+                                        it.code?.toLowerCase() === ing.name?.toLowerCase()
+                                      );
+                                      const cost = Number(ing.unitCost) || Number(matched?.unitCost) || 0;
+                                      const qty = Number(ing.standardQty) || 0;
+                                      const lineSubtotal = qty * cost;
+
+                                      return (
+                                        <div key={ing.id || i} className="flex items-center justify-between text-xs pt-1.5 first:pt-0">
+                                          <div>
+                                            <span className="font-bold text-slate-800 block">{ing.name}</span>
+                                            {ing.notes && (
+                                              <span className="text-[10px] text-slate-400 italic block">{ing.notes}</span>
+                                            )}
+                                          </div>
+                                          <div className="text-right shrink-0">
+                                            <span className="font-mono font-bold text-slate-900 block">
+                                              {ing.standardQty} {ing.unit}
+                                            </span>
+                                            {cost > 0 && (
+                                              <span className="text-[10px] font-bold text-emerald-700 block">
+                                                {formatCOP(lineSubtotal)} (@{formatCOP(cost)})
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+
+                                  {templateCost > 0 && (
+                                    <div className="pt-2 border-t border-slate-300 flex items-center justify-between text-xs font-black text-slate-900">
+                                      <span>Costo Total Estimado Insumos:</span>
+                                      <span className="text-emerald-800 text-sm">{formatCOP(templateCost)}</span>
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                <p className="text-[11px] text-slate-400 italic text-center py-1">
+                                  Sin insumos aún. Edita el proceso para agregarlos.
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
 
                   {/* Mermas que aplican */}
