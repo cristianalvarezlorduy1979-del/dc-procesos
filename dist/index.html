@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192-v4.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=5" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=5" />
+    <link rel="manifest" href="/manifest.json?v=5" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#f0f7ff" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="DC Procesos" />
+    <title>DC Procesos - Control de Producción y Rendimientos</title>
+    <!-- Tipografía Inter / Inter Tight (Google Fonts) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,300..900;1,300..900&family=Inter:wght@300..900&display=swap" rel="stylesheet">
+    
+    <!-- Google reCAPTCHA v3 (Protección Inteligente Invisible) -->
+    <script src="https://www.google.com/recaptcha/api.js?render=6LcBDRQuAAAAANfXf6euPklvVkXs6nxYszlE9obm" async defer></script>
+    
+    <!-- Capturador de Emergencia Global para Diagnóstico en Pantalla -->
+    <script>
+      window.addEventListener('error', function(event) {
+        console.error('GLOBAL_WINDOW_ERROR:', event);
+        var root = document.getElementById('root');
+        if (!root || !root.children || root.children.length === 0) {
+          var container = document.getElementById('fatal-error-panel');
+          if (!container) {
+            container = document.createElement('div');
+            container.id = 'fatal-error-panel';
+            container.style = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#f0f7ff;padding:24px;font-family:sans-serif;z-index:999999;display:flex;align-items:center;justify-content:center;';
+            document.body ? document.body.appendChild(container) : document.documentElement.appendChild(container);
+          }
+          container.innerHTML = '<div style="background:#fff;border:1px solid #fecaca;padding:24px;border-radius:16px;max-width:550px;width:100%;box-shadow:0 10px 25px rgba(0,0,0,0.05);">' +
+            '<div style="color:#dc2626;font-size:18px;font-weight:bold;margin-bottom:8px;">⚠️ Error de Carga en DC Procesos</div>' +
+            '<p style="color:#64748b;font-size:13px;margin-bottom:12px;">Se presentó un error en el navegador:</p>' +
+            '<pre style="background:#fef2f2;color:#991b1b;padding:12px;border-radius:8px;font-size:11px;overflow:auto;max-height:200px;white-space:pre-wrap;">' +
+            (event.error ? (event.error.stack || event.error.message || String(event.error)) : event.message) + '</pre>' +
+            '<button onclick="localStorage.clear();sessionStorage.clear();if(\'serviceWorker\' in navigator){navigator.serviceWorker.getRegistrations().then(r=>r.forEach(x=>x.unregister()));}window.location.reload(true);" style="margin-top:14px;background:#4338ca;color:#fff;border:none;padding:10px 18px;border-radius:10px;font-weight:bold;font-size:12px;cursor:pointer;">Limpiar Caché y Recargar</button>' +
+            '</div>';
+        }
+      });
+    </script>
+    <script type="module" crossorigin src="/assets/index-BGPzx-Ye.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-12LwIW2M.css">
+  </head>
+  <body class="bg-[#f0f7ff] text-slate-900 antialiased selection:bg-indigo-600 selection:text-white min-h-screen">
+    <div id="root"></div>
+  </body>
+</html>
