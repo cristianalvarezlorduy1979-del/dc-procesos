@@ -63,21 +63,11 @@ services:
       - backend
     networks:
       - dc_procesos_net
-      - coolify
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=coolify"
-      - "traefik.http.routers.dcprocesos.rule=Host(`procesos.dcasesoriaslatam.com`)"
-      - "traefik.http.routers.dcprocesos.entrypoints=web,websecure"
-      - "traefik.http.routers.dcprocesos.tls=true"
-      - "traefik.http.services.dcprocesos.loadbalancer.server.port=80"
-
-networks:
-  dc_procesos_net:
-    driver: bridge
-  coolify:
-    external: true
 
 volumes:
   dc_procesos_pgdata:
     driver: local
+
+networks:
+  dc_procesos_net:
+    driver: bridge
