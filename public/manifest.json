@@ -4,35 +4,35 @@
   "description": "Sistema de Control de Producción, Rendimientos e Inventarios",
   "icons": [
     {
-      "src": "/icon-192-v4.png",
+      "src": "/icon-192-v4.png?v=6",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "any"
     },
     {
-      "src": "/icon-192-v4.png",
+      "src": "/icon-192-v4.png?v=6",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "maskable"
     },
     {
-      "src": "/icon-512-v4.png",
+      "src": "/icon-512-v4.png?v=6",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any"
     },
     {
-      "src": "/icon-512-v4.png",
+      "src": "/icon-512-v4.png?v=6",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "maskable"
     }
   ],
-  "start_url": "/?source=pwa&v=4",
+  "start_url": "/?source=pwa&v=6",
   "scope": "/",
-  "id": "/?source=pwa&v=4",
-  "background_color": "#031a13",
-  "theme_color": "#031a13",
+  "id": "/?source=pwa&v=6",
+  "background_color": "#010705",
+  "theme_color": "#010705",
   "display": "standalone",
   "orientation": "portrait"
 }
