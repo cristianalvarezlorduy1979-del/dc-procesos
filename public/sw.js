@@ -1,5 +1,5 @@
-// DC Procesos Service Worker v6
-const CACHE_NAME = 'dc-procesos-v6';
+// DC Procesos Service Worker v8
+const CACHE_NAME = 'dc-procesos-v8';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

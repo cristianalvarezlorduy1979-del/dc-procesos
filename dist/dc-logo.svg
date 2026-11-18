@@ -1,61 +1,73 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <radialGradient id="p2Bg" cx="50%" cy="50%" r="70%">
-      <stop offset="0%" stop-color="#0b1b15" />
-      <stop offset="70%" stop-color="#03110c" />
-      <stop offset="100%" stop-color="#010705" />
+    <radialGradient id="dcBgSolid" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#082a1c" />
+      <stop offset="60%" stop-color="#03150e" />
+      <stop offset="100%" stop-color="#010c08" />
     </radialGradient>
-    <linearGradient id="p2Steel" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#e2e8f0" />
-      <stop offset="50%" stop-color="#94a3b8" />
-      <stop offset="100%" stop-color="#475569" />
-    </linearGradient>
-    <linearGradient id="p2Green" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00df82" />
-      <stop offset="100%" stop-color="#059669" />
-    </linearGradient>
-    <filter id="p2Glow">
-      <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
-      <feMerge>
-        <feMergeNode in="coloredBlur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
   </defs>
 
-  <!-- Fondo Continuo Edge-to-Edge para evitar marcos en la app movil -->
-  <rect width="512" height="512" fill="url(#p2Bg)" />
+  <!-- Fondo circular con borde esmeralda -->
+  <circle cx="256" cy="256" r="246" fill="url(#dcBgSolid)" stroke="#00df82" stroke-width="3" />
+  <circle cx="256" cy="256" r="234" fill="none" stroke="#00df82" stroke-width="1.5" stroke-dasharray="8 8" opacity="0.35" />
 
-  <!-- Corona circular de balance de masa -->
-  <circle cx="256" cy="225" r="160" fill="none" stroke="#00df82" stroke-width="2" opacity="0.25" stroke-dasharray="10 12" />
+  <!-- Cabezal digital de pesaje arriba -->
+  <rect x="196" y="75" width="120" height="42" rx="10" fill="#021a12" stroke="#00df82" stroke-width="3" />
+  <circle cx="216" cy="96" r="6" fill="#00ff96" />
+  <rect x="232" y="90" width="68" height="12" rx="4" fill="#00df82" opacity="0.9" />
+  <line x1="256" y1="117" x2="256" y2="150" stroke="#00df82" stroke-width="6" stroke-linecap="round" />
 
-  <!-- Indicador digital estilizado arriba (Cabezal LED) -->
-  <rect x="206" y="90" width="100" height="34" rx="8" fill="#041f17" stroke="#00df82" stroke-width="2" />
-  <circle cx="222" cy="107" r="4" fill="#00df82" filter="url(#p2Glow)" />
-  <rect x="236" y="102" width="56" height="10" rx="3" fill="#00df82" opacity="0.85" />
-  <line x1="256" y1="124" x2="256" y2="150" stroke="#00df82" stroke-width="4" stroke-linecap="round" />
+  <!-- LETRA D (Blanco Puro) -->
+  <path
+    d="M 145 155 L 210 155 C 260 155, 275 185, 275 220 C 275 255, 260 285, 210 285 L 145 285 Z"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="28"
+    stroke-linejoin="round"
+    stroke-linecap="round"
+  />
 
-  <!-- MONOGRAMA DC FLOTANTE Y PROTAGONISTA -->
-  <!-- D -->
-  <path d="M 165 160 L 220 160 C 255 160, 270 185, 270 215 C 270 245, 255 270, 220 270 L 165 270 Z" 
-        fill="none" stroke="#ffffff" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" />
-  <!-- C -->
-  <path d="M 335 175 C 300 150, 250 160, 230 195 C 210 230, 220 260, 250 280 C 285 298, 325 290, 340 270" 
-        fill="none" stroke="url(#p2Green)" stroke-width="24" stroke-linecap="round" />
+  <!-- LETRA C (Verde Esmeralda Neón) -->
+  <path
+    d="M 342 165 A 64 64 0 1 0 342 275"
+    fill="none"
+    stroke="#00df82"
+    stroke-width="28"
+    stroke-linecap="round"
+  />
 
-  <!-- PLATAFORMA DE PESAJE DE ALTA PRECISIÓN (Base en Acero Inoxidable) -->
-  <rect x="120" y="278" width="272" height="16" rx="5" fill="url(#p2Steel)" />
-  <rect x="126" y="281" width="260" height="3" rx="1.5" fill="#ffffff" opacity="0.9" />
+  <!-- PLATAFORMA DE PESAJE EN ACERO INOXIDABLE -->
+  <rect x="110" y="295" width="292" height="20" rx="5" fill="#94a3b8" stroke="#ffffff" stroke-width="2" />
+  <rect x="116" y="298" width="280" height="4" rx="2" fill="#ffffff" opacity="0.95" />
   
-  <!-- Patas de celda de carga -->
-  <rect x="145" y="294" width="24" height="8" rx="2" fill="#334155" />
-  <rect x="343" y="294" width="24" height="8" rx="2" fill="#334155" />
+  <!-- Patas celda de carga -->
+  <rect x="135" y="315" width="30" height="10" rx="3" fill="#334155" />
+  <rect x="347" y="315" width="30" height="10" rx="3" fill="#334155" />
 
-  <!-- Textos de Marca -->
-  <text x="256" y="365" text-anchor="middle" fill="#ffffff" font-size="36" font-weight="900" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" letter-spacing="6">
+  <!-- TIPOGRAFÍA GRANDE Y LEGIBLE -->
+  <text
+    x="256"
+    y="385"
+    text-anchor="middle"
+    fill="#ffffff"
+    font-size="52"
+    font-weight="900"
+    letter-spacing="4"
+    font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+  >
     DC PROCESOS
   </text>
-  <text x="256" y="400" text-anchor="middle" fill="#00df82" font-size="15" font-weight="800" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" letter-spacing="4">
+
+  <text
+    x="256"
+    y="428"
+    text-anchor="middle"
+    fill="#00df82"
+    font-size="24"
+    font-weight="800"
+    letter-spacing="3"
+    font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+  >
     PESAJE &amp; RENDIMIENTOS
   </text>
 </svg>

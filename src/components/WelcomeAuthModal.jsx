@@ -189,7 +189,7 @@ export default function WelcomeAuthModal() {
 
           {/* Logo Redondo DC PROCESOS */}
           <div className="my-1 p-1">
-            <DCLogo className="w-32 h-32 drop-shadow-2xl mx-auto" />
+            <DCLogo className="w-36 h-36 drop-shadow-2xl mx-auto" />
           </div>
 
           {/* Nombre y Slogan */}
@@ -435,7 +435,7 @@ export default function WelcomeAuthModal() {
 
           {/* Centro: Logo Redondo y Slogan */}
           <div className="relative z-10 my-auto py-2 flex flex-col items-center text-center">
-            <DCLogo className="w-36 h-36 xl:w-44 xl:h-44 drop-shadow-2xl" />
+            <DCLogo className="w-40 h-40 xl:w-48 xl:h-48 drop-shadow-2xl" />
 
             <div className="mt-3">
               <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-blue-400">

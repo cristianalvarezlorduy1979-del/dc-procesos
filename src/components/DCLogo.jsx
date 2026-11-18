@@ -5,53 +5,78 @@ export default function DCLogo({ className = "w-52 h-52" }) {
     <div className={`relative flex items-center justify-center select-none ${className}`}>
       <svg viewBox="0 0 512 512" className="w-full h-full drop-shadow-xl overflow-visible">
         <defs>
-          <radialGradient id="dcBgProp2" cx="50%" cy="50%" r="70%">
-            <stop offset="0%" stopColor="#0b1b15" />
-            <stop offset="70%" stopColor="#03110c" />
-            <stop offset="100%" stopColor="#010705" />
+          <radialGradient id="dcBgSolid" cx="50%" cy="50%" r="70%">
+            <stop offset="0%" stopColor="#082a1c" />
+            <stop offset="60%" stopColor="#03150e" />
+            <stop offset="100%" stopColor="#010c08" />
           </radialGradient>
-          <linearGradient id="dcSteelPlate2" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#e2e8f0" />
-            <stop offset="50%" stopColor="#94a3b8" />
-            <stop offset="100%" stopColor="#475569" />
-          </linearGradient>
-          <linearGradient id="dcGreen2" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#00df82" />
-            <stop offset="100%" stopColor="#059669" />
-          </linearGradient>
         </defs>
 
-        {/* Fondo circular */}
-        <circle cx="256" cy="256" r="248" fill="url(#dcBgProp2)" stroke="#064e3b" strokeWidth="3" />
-        <circle cx="256" cy="225" r="160" fill="none" stroke="#00df82" strokeWidth="2" opacity="0.25" strokeDasharray="10 12" />
+        {/* Círculo base con borde esmeralda */}
+        <circle cx="256" cy="256" r="246" fill="url(#dcBgSolid)" stroke="#00df82" strokeWidth="3" />
+        <circle cx="256" cy="256" r="234" fill="none" stroke="#00df82" strokeWidth="1.5" strokeDasharray="8 8" opacity="0.35" />
 
-        {/* Indicador digital estilizado arriba (Cabezal LED) */}
-        <rect x="206" y="90" width="100" height="34" rx="8" fill="#041f17" stroke="#00df82" strokeWidth="2" />
-        <circle cx="222" cy="107" r="4" fill="#00df82" />
-        <rect x="236" y="102" width="56" height="10" rx="3" fill="#00df82" opacity="0.85" />
-        <line x1="256" y1="124" x2="256" y2="150" stroke="#00df82" strokeWidth="4" strokeLinecap="round" />
+        {/* Cabezal digital de pesaje arriba */}
+        <rect x="196" y="75" width="120" height="42" rx="10" fill="#021a12" stroke="#00df82" strokeWidth="3" />
+        <circle cx="216" cy="96" r="6" fill="#00ff96" />
+        <rect x="232" y="90" width="68" height="12" rx="4" fill="#00df82" opacity="0.9" />
+        <line x1="256" y1="117" x2="256" y2="150" stroke="#00df82" strokeWidth="6" strokeLinecap="round" />
 
-        {/* MONOGRAMA DC FLOTANTE */}
-        {/* Letra D en Blanco Puro */}
-        <path d="M 165 160 L 220 160 C 255 160, 270 185, 270 215 C 270 245, 255 270, 220 270 L 165 270 Z" 
-              fill="none" stroke="#ffffff" strokeWidth="24" strokeLinecap="round" strokeLinejoin="round" />
-        {/* Letra C en Verde Esmeralda */}
-        <path d="M 335 175 C 300 150, 250 160, 230 195 C 210 230, 220 260, 250 280 C 285 298, 325 290, 340 270" 
-              fill="none" stroke="url(#dcGreen2)" strokeWidth="24" strokeLinecap="round" />
-
-        {/* PLATAFORMA DE PESAJE DE ALTA PRECISIÓN */}
-        <rect x="120" y="278" width="272" height="16" rx="5" fill="url(#dcSteelPlate2)" />
-        <rect x="126" y="281" width="260" height="3" rx="1.5" fill="#ffffff" opacity="0.9" />
+        {/* ================================================================= */}
+        {/* MONOGRAMA DC (100% SÓLIDO, ALTO CONTRASTE, VISIBILIDAD GARANTIZADA) */}
+        {/* ================================================================= */}
         
-        {/* Patas de celda de carga */}
-        <rect x="145" y="294" width="24" height="8" rx="2" fill="#334155" />
-        <rect x="343" y="294" width="24" height="8" rx="2" fill="#334155" />
+        {/* LETRA D (Blanco Puro Sólido) */}
+        <path
+          d="M 145 155 L 210 155 C 260 155, 275 185, 275 220 C 275 255, 260 285, 210 285 L 145 285 Z"
+          fill="none"
+          stroke="#ffffff"
+          strokeWidth="28"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
 
-        {/* Textos de Marca */}
-        <text x="256" y="365" textAnchor="middle" fill="#ffffff" fontSize="36" fontWeight="900" fontFamily="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" letterSpacing="6">
+        {/* LETRA C (Verde Esmeralda Neón Sólido - Arco Matemático Preciso) */}
+        <path
+          d="M 342 165 A 64 64 0 1 0 342 275"
+          fill="none"
+          stroke="#00df82"
+          strokeWidth="28"
+          strokeLinecap="round"
+        />
+
+        {/* PLATAFORMA DE PESAJE EN ACERO INOXIDABLE */}
+        <rect x="110" y="295" width="292" height="20" rx="5" fill="#94a3b8" stroke="#ffffff" strokeWidth="2" />
+        <rect x="116" y="298" width="280" height="4" rx="2" fill="#ffffff" opacity="0.95" />
+        
+        {/* Patas celda de carga */}
+        <rect x="135" y="315" width="30" height="10" rx="3" fill="#334155" />
+        <rect x="347" y="315" width="30" height="10" rx="3" fill="#334155" />
+
+        {/* TIPOGRAFÍA GRANDE, AUDÁZ Y 100% LEGIBLE */}
+        <text
+          x="256"
+          y="385"
+          textAnchor="middle"
+          fill="#ffffff"
+          fontSize="52"
+          fontWeight="900"
+          letterSpacing="4"
+          fontFamily="'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+        >
           DC PROCESOS
         </text>
-        <text x="256" y="400" textAnchor="middle" fill="#00df82" fontSize="15" fontWeight="800" fontFamily="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" letterSpacing="4">
+
+        <text
+          x="256"
+          y="428"
+          textAnchor="middle"
+          fill="#00df82"
+          fontSize="24"
+          fontWeight="800"
+          letterSpacing="3"
+          fontFamily="'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+        >
           PESAJE &amp; RENDIMIENTOS
         </text>
       </svg>
