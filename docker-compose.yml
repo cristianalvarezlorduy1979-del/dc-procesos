@@ -57,6 +57,8 @@ services:
     image: nginx:alpine
     container_name: dc_procesos_web
     restart: unless-stopped
+    expose:
+      - "80"
     volumes:
       - ./dist:/usr/share/nginx/html:ro
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
