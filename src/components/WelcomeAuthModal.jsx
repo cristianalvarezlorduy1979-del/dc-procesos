@@ -176,14 +176,27 @@ export default function WelcomeAuthModal() {
       {/* ========================================================================= */}
       {/* 1. VISTA MÓVIL EXCLUSIVA PARA CELULARES (< lg): ÚNICAMENTE OPERARIO LITE  */}
       {/* ========================================================================= */}
-      <div className="lg:hidden min-h-screen flex flex-col justify-between bg-gradient-to-b from-[#0b132b] via-[#101b3b] to-slate-900 text-white overflow-y-auto">
+      <div className="lg:hidden min-h-screen flex flex-col justify-between bg-gradient-to-b from-[#020b14] via-[#091522] to-slate-900 text-white overflow-y-auto relative">
         
+        {/* Fotografía real de fondo en cabecera móvil */}
+        <div className="absolute top-0 left-0 right-0 h-72 pointer-events-none overflow-hidden z-0">
+          <picture>
+            <source srcSet="/login-hero-plant.webp" type="image/webp" />
+            <img 
+              src="/login-hero-plant-opt.jpg" 
+              alt="Planta de Producción Gastronómica" 
+              className="w-full h-full object-cover object-center"
+            />
+          </picture>
+          <div className="absolute inset-0 bg-gradient-to-b from-[#020b14]/30 via-[#020b14]/70 to-[#020b14]" />
+        </div>
+
         {/* Cabecera Superior Móvil */}
-        <div className="pt-6 pb-3 px-4 flex flex-col items-center text-center">
+        <div className="pt-6 pb-3 px-4 flex flex-col items-center text-center relative z-10">
           
           {/* Badge de Plataforma */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-950/80 border border-blue-400/30 text-[10px] font-black tracking-widest text-blue-300 uppercase mb-2 shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/70 border border-[#00df82]/30 text-[10px] font-black tracking-widest text-[#00df82] uppercase mb-2 shadow-sm backdrop-blur-sm">
+            <span className="w-2 h-2 rounded-full bg-[#00df82] animate-pulse" />
             PLANTA DE PRODUCCIÓN • MÓVIL
           </div>
 
@@ -194,7 +207,7 @@ export default function WelcomeAuthModal() {
 
           {/* Nombre y Slogan */}
           <div className="mt-1">
-            <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-blue-400">
+            <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#00df82]">
               DC ASESORÍAS
             </span>
             <h1 className="text-2xl font-black text-white tracking-tight">
@@ -421,46 +434,65 @@ export default function WelcomeAuthModal() {
       {/* ========================================================================= */}
       <div className="hidden lg:grid w-full h-screen grid-cols-2 bg-[#f8fafc] overflow-hidden">
         
-        {/* COLUMNA IZQUIERDA: HERO BRANDING (ESTILO EJECUTIVO AZUL MEDIANOCHE) */}
-        <div className="relative bg-gradient-to-br from-[#0b132b] via-[#101b3b] to-[#0f172a] text-white p-8 xl:p-12 flex flex-col justify-between h-full overflow-hidden border-r border-slate-800/80 shadow-lg">
-          <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
+        {/* COLUMNA IZQUIERDA: HERO BRANDING (FOTOGRAFÍA INDUSTRIAL VÍVIDA + ESTILO DC ENRUTADOR) */}
+        <div className="relative bg-[#020b14] text-white p-8 xl:p-12 flex flex-col justify-between h-full overflow-hidden border-r border-slate-800/80 shadow-2xl">
+          
+          {/* Fotografía nítida y realista de la planta gastronómica (sin filtros oscuros destructivos) */}
+          <picture className="absolute inset-0 pointer-events-none">
+            <source srcSet="/login-hero-plant.webp" type="image/webp" />
+            <img 
+              src="/login-hero-plant-opt.jpg" 
+              alt="Planta de Producción Gastronómica" 
+              className="w-full h-full object-cover object-center transform scale-100"
+            />
+          </picture>
+          
+          {/* Capas de degradado estratégicas (Exacto a la referencia de DC Enrutador) */}
+          {/* 1. Sombra sutil superior para el badge */}
+          <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-[#020b14]/85 via-[#020b14]/40 to-transparent pointer-events-none" />
+          
+          {/* 2. Sombra cinematográfica inferior para contraste perfecto de textos y footer */}
+          <div className="absolute bottom-0 left-0 right-0 h-[58%] bg-gradient-to-t from-[#020b14] via-[#020b14]/90 to-transparent pointer-events-none" />
+          
+          {/* 3. Tinte ambiental mínimo (15%) para máxima nitidez de la foto */}
+          <div className="absolute inset-0 bg-[#020b14]/15 pointer-events-none" />
 
           {/* Tag Superior */}
           <div className="relative z-10 flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-pulse" />
-            <span className="text-[10px] font-black tracking-widest text-blue-300 uppercase px-2.5 py-0.5 rounded-full bg-blue-900/40 border border-blue-500/30">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#00df82] animate-pulse" />
+            <span className="text-[10px] font-black tracking-widest text-[#00df82] uppercase px-2.5 py-0.5 rounded-full bg-emerald-950/70 border border-[#00df82]/30 backdrop-blur-md shadow-sm">
               ECOSISTEMA DC ASESORÍAS
             </span>
           </div>
 
           {/* Centro: Logo Redondo y Slogan */}
           <div className="relative z-10 my-auto py-2 flex flex-col items-center text-center">
-            <DCLogo className="w-40 h-40 xl:w-48 xl:h-48 drop-shadow-2xl" />
+            <DCLogo className="w-44 h-44 xl:w-52 xl:h-52 drop-shadow-[0_20px_35px_rgba(0,0,0,0.85)]" />
 
-            <div className="mt-3">
-              <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-blue-400">
+            <div className="mt-4">
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.25em] text-[#00df82] drop-shadow-md">
                 DC ASESORÍAS
               </span>
-              <h1 className="text-3xl xl:text-4xl font-black text-white tracking-tight mt-0.5">
+              <h1 className="text-3xl xl:text-4xl font-black text-white tracking-tight mt-0.5 drop-shadow-md">
                 DC PROCESOS
               </h1>
             </div>
 
-            <p className="mt-2 text-sm italic text-slate-200 font-medium max-w-sm">
+            <p className="mt-2 text-sm italic text-slate-100 font-medium max-w-sm drop-shadow-sm">
               "Innovación, control y crecimiento en tu negocio."
             </p>
 
-            <p className="mt-1 text-xs text-slate-400 max-w-sm leading-relaxed">
+            <p className="mt-1 text-xs text-slate-300 max-w-sm leading-relaxed drop-shadow-sm">
               Control integral de procesos, rendimientos, mermas, inventarios y valorización en tiempo real.
             </p>
           </div>
 
           {/* Footer Inferior */}
-          <div className="relative z-10 flex items-center justify-between text-xs text-slate-400 border-t border-slate-800/80 pt-3">
-            <span>Sistema Integral de Procesos</span>
+          <div className="relative z-10 flex items-center justify-between text-xs text-slate-300 border-t border-slate-800/80 pt-3">
+            <span className="drop-shadow-sm">Sistema Integral de Procesos</span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-blue-400" />
-              DC Procesos <span className="font-mono text-[10px] text-blue-300 font-bold px-1.5 py-0.5 rounded bg-blue-900/50 border border-blue-500/30">{APP_VERSION}</span>
+              <span className="w-2 h-2 rounded-full bg-[#00df82]" />
+              DC Procesos <span className="font-mono text-[10px] text-[#00df82] font-bold px-1.5 py-0.5 rounded bg-emerald-950/60 border border-[#00df82]/30">{APP_VERSION}</span>
             </span>
           </div>
         </div>
