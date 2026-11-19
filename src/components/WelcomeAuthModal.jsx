@@ -181,9 +181,9 @@ export default function WelcomeAuthModal() {
         {/* Fotografía real de fondo en cabecera móvil */}
         <div className="absolute top-0 left-0 right-0 h-72 pointer-events-none overflow-hidden z-0">
           <picture>
-            <source srcSet="/login-hero-plant.webp" type="image/webp" />
+            <source srcSet="/login-cocina-chefs.webp?v=9" type="image/webp" />
             <img 
-              src="/login-hero-plant-opt.jpg" 
+              src="/login-cocina-chefs.jpg?v=9" 
               alt="Planta de Producción Gastronómica" 
               className="w-full h-full object-cover object-center"
             />
@@ -432,202 +432,192 @@ export default function WelcomeAuthModal() {
       {/* ========================================================================= */}
       {/* 2. VISTA ESCRITORIO EXCLUSIVA (>= lg): ÚNICAMENTE USUARIO MASTER EMPRESA */}
       {/* ========================================================================= */}
-      <div className="hidden lg:grid w-full h-screen grid-cols-2 bg-[#f8fafc] overflow-hidden">
+      <div className="hidden lg:flex w-full h-screen relative overflow-hidden bg-slate-950 items-center justify-end pr-8 xl:pr-16 2xl:pr-24">
         
-        {/* COLUMNA IZQUIERDA: HERO BRANDING (FOTOGRAFÍA INDUSTRIAL VÍVIDA + ESTILO DC ENRUTADOR) */}
-        <div className="relative bg-[#020b14] text-white p-8 xl:p-12 flex flex-col justify-between h-full overflow-hidden border-r border-slate-800/80 shadow-2xl">
-          
-          {/* Fotografía nítida y realista de la planta gastronómica (sin filtros oscuros destructivos) */}
-          <picture className="absolute inset-0 pointer-events-none">
-            <source srcSet="/login-hero-plant.webp" type="image/webp" />
-            <img 
-              src="/login-hero-plant-opt.jpg" 
-              alt="Planta de Producción Gastronómica" 
-              className="w-full h-full object-cover object-center transform scale-100"
-            />
-          </picture>
-          
-          {/* Capas de degradado estratégicas (Exacto a la referencia de DC Enrutador) */}
-          {/* 1. Sombra sutil superior para el badge */}
-          <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-[#020b14]/85 via-[#020b14]/40 to-transparent pointer-events-none" />
-          
-          {/* 2. Sombra cinematográfica inferior para contraste perfecto de textos y footer */}
-          <div className="absolute bottom-0 left-0 right-0 h-[58%] bg-gradient-to-t from-[#020b14] via-[#020b14]/90 to-transparent pointer-events-none" />
-          
-          {/* 3. Tinte ambiental mínimo (15%) para máxima nitidez de la foto */}
-          <div className="absolute inset-0 bg-[#020b14]/15 pointer-events-none" />
+        {/* FOTOGRAFÍA DE FONDO A PANTALLA COMPLETA (EXPANDIDA AL 100%) */}
+        <picture className="absolute inset-0 w-full h-full pointer-events-none">
+          <source srcSet="/login-cocina-chefs.webp?v=9" type="image/webp" />
+          <img 
+            src="/login-cocina-chefs.jpg?v=9" 
+            alt="Planta de Producción Gastronómica" 
+            className="w-full h-full object-cover object-[25%_center]"
+          />
+        </picture>
 
-          {/* Tag Superior */}
-          <div className="relative z-10 flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#00df82] animate-pulse" />
-            <span className="text-[10px] font-black tracking-widest text-[#00df82] uppercase px-2.5 py-0.5 rounded-full bg-emerald-950/70 border border-[#00df82]/30 backdrop-blur-md shadow-sm">
-              ECOSISTEMA DC ASESORÍAS
-            </span>
-          </div>
+        {/* Viñeta cinematográfica suave: protege el lado izquierdo y genera contraste suave a la derecha para el rectángulo */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/20 via-slate-950/25 to-slate-950/70 pointer-events-none" />
 
-          {/* Centro: Logo Redondo y Slogan */}
-          <div className="relative z-10 my-auto py-2 flex flex-col items-center text-center">
-            <DCLogo className="w-44 h-44 xl:w-52 xl:h-52 drop-shadow-[0_20px_35px_rgba(0,0,0,0.85)]" />
+        {/* Tag Superior Izquierdo del Ecosistema */}
+        <div className="absolute top-6 left-8 z-10">
+          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-950/70 border border-white/20 text-[11px] font-bold tracking-wider text-white uppercase backdrop-blur-md shadow-xl">
+            <span className="w-2 h-2 rounded-full bg-[#00df82] animate-pulse" />
+            ECOSISTEMA DC ASESORÍAS
+          </span>
+        </div>
 
-            <div className="mt-4">
-              <span className="text-[11px] font-extrabold uppercase tracking-[0.25em] text-[#00df82] drop-shadow-md">
+        {/* Pie de foto inferior izquierdo discreto */}
+        <div className="absolute bottom-6 left-8 z-10 pointer-events-none">
+          <span className="px-3.5 py-1.5 rounded-lg bg-slate-950/60 backdrop-blur-md border border-white/10 text-xs text-white/90 font-medium shadow-md">
+            Planta de Producción Gastronómica
+          </span>
+        </div>
+
+        {/* RECTÁNGULO DE INICIAR SESIÓN (PROPUESTA 3: TITANIO / PLATINO SATINADO) */}
+        <div className="relative z-20 w-full max-w-[410px] bg-slate-100/95 backdrop-blur-2xl p-6 sm:p-7 rounded-3xl border border-slate-300 shadow-[0_25px_60px_-15px_rgba(15,23,42,0.4)] text-slate-900 space-y-3.5">
+          
+          {/* Cabecera con Logotipo DC PROCESOS y Marca */}
+          <div className="text-center flex flex-col items-center">
+            <DCLogo className="w-20 h-20 mb-1 drop-shadow-md" />
+            
+            <div className="mt-0.5">
+              <span className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-600 block">
                 DC ASESORÍAS
               </span>
-              <h1 className="text-3xl xl:text-4xl font-black text-white tracking-tight mt-0.5 drop-shadow-md">
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-0.5">
                 DC PROCESOS
               </h1>
             </div>
 
-            <p className="mt-2 text-sm italic text-slate-100 font-medium max-w-sm drop-shadow-sm">
+            {/* Pastilla DC Procesos v1.0 reubicada justo debajo de DC Procesos */}
+            <div className="mt-1 flex justify-center">
+              <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-slate-200/90 border border-slate-300/80 text-[10px] font-mono font-bold text-slate-800 shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#00df82] animate-pulse" />
+                DC Procesos {APP_VERSION}
+              </span>
+            </div>
+
+            <p className="mt-1 text-[11px] italic text-slate-500 font-medium">
               "Innovación, control y crecimiento en tu negocio."
             </p>
+          </div>
 
-            <p className="mt-1 text-xs text-slate-300 max-w-sm leading-relaxed drop-shadow-sm">
-              Control integral de procesos, rendimientos, mermas, inventarios y valorización en tiempo real.
+          {/* Separador y Título de Inicio de Sesión */}
+          <div className="text-center pt-2 border-t border-slate-200/90">
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">
+              SISTEMA INTEGRAL GASTRONÓMICO
+            </span>
+            <h2 className="text-base font-bold text-slate-800 tracking-tight">
+              Iniciar Sesión
+            </h2>
+            <p className="text-[11px] text-slate-500 max-w-xs mx-auto mt-0.5 leading-relaxed">
+              Accede a la plataforma con tu usuario o correo electrónico
             </p>
           </div>
 
-          {/* Footer Inferior */}
-          <div className="relative z-10 flex items-center justify-between text-xs text-slate-300 border-t border-slate-800/80 pt-3">
-            <span className="drop-shadow-sm">Sistema Integral de Procesos</span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#00df82]" />
-              DC Procesos <span className="font-mono text-[10px] text-[#00df82] font-bold px-1.5 py-0.5 rounded bg-emerald-950/60 border border-[#00df82]/30">{APP_VERSION}</span>
-            </span>
-          </div>
-        </div>
+          {errorMessage && (
+            <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
+              <span className="font-medium">{errorMessage}</span>
+            </div>
+          )}
 
-        {/* COLUMNA DERECHA: FORMULARIO MASTER (PÁGINA WEB) */}
-        <div className="flex flex-col justify-center items-center p-8 xl:p-12 bg-[#f8fafc] h-full overflow-hidden">
-          <div className="w-full max-w-md bg-white p-7 sm:p-9 rounded-3xl border border-slate-200/90 shadow-sm space-y-4">
+          {/* Formulario Master */}
+          <form onSubmit={handleMasterSubmit} className="space-y-3 pt-0.5">
             
-            <div className="text-center space-y-1">
-              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-widest block">
-                SISTEMA INTEGRAL GASTRONÓMICO
-              </span>
-              <h2 className="text-2xl xl:text-3xl font-black text-slate-900 tracking-tight">
-                Iniciar Sesión
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-500 max-w-sm mx-auto leading-relaxed">
-                Accede a la plataforma con tu usuario o correo electrónico y contraseña
-              </p>
+            <div>
+              <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                Correo Electrónico o Usuario *
+              </label>
+              <div className="relative">
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="dcasesorias@gmail.com"
+                  className="w-full pl-10 pr-4 py-2 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-all outline-none"
+                  required
+                />
+              </div>
             </div>
 
-            {errorMessage && (
-              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
-                <span className="font-medium">{errorMessage}</span>
-              </div>
-            )}
-
-            {/* Formulario Master */}
-            <form onSubmit={handleMasterSubmit} className="space-y-4 pt-1">
-              
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Correo Electrónico o Usuario *
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] font-bold text-slate-700">
+                  Contraseña *
                 </label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="dcasesorias@gmail.com"
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50/70 border border-slate-300 rounded-xl text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-bold text-slate-700">
-                    Contraseña *
-                  </label>
-                  <button
-                    type="button"
-                    onClick={handleForgotPassword}
-                    className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline"
-                  >
-                    ¿Olvidaste tu contraseña?
-                  </button>
-                </div>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type={showMasterPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full pl-10 pr-10 py-2.5 bg-slate-50/70 border border-slate-300 rounded-xl text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowMasterPassword(!showMasterPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
-                  >
-                    {showMasterPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3.5 px-6 rounded-xl bg-[#4338ca] hover:bg-indigo-700 active:scale-[0.99] text-white font-black text-xs sm:text-sm uppercase tracking-wider shadow-md shadow-indigo-600/25 flex items-center justify-center gap-2 transition-all disabled:opacity-50 mt-2"
-              >
-                {loading ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <span>INGRESAR AL SISTEMA</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-
-            </form>
-
-            <div className="pt-3 border-t border-slate-100">
-              <div className="text-center">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  o conéctate con nosotros
-                </span>
-              </div>
-
-              <div className="flex items-center justify-center gap-3.5 mt-2.5">
-                <a
-                  href="https://wa.me/573000000000?text=Hola,%20deseo%20informaci%C3%B3n%20sobre%20DC%20Procesos"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="w-9 h-9 rounded-full border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 flex items-center justify-center transition-colors shadow-2xs"
-                  title="WhatsApp Soporte"
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 hover:underline"
                 >
-                  <MessageCircle className="w-4 h-4" />
-                </a>
-
-                <a
-                  href="mailto:dcasesorias@gmail.com?subject=Consulta%20DC%20Procesos"
-                  className="w-9 h-9 rounded-full border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-colors shadow-2xs"
-                  title="Contacto Directo por Correo"
-                >
-                  <Mail className="w-4 h-4" />
-                </a>
+                  ¿Olvidaste tu contraseña?
+                </button>
               </div>
-
-              {/* Badge Legal Google reCAPTCHA v3 */}
-              <div className="mt-3 text-center text-[10px] text-slate-400 flex items-center justify-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                <span>Protegido con <strong>Google reCAPTCHA v3</strong> · </span>
-                <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-slate-600">Privacidad</a>
-                <span> y </span>
-                <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-slate-600">Condiciones</a>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type={showMasterPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full pl-10 pr-10 py-2 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition-all outline-none"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowMasterPassword(!showMasterPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                >
+                  {showMasterPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 px-6 rounded-xl bg-slate-900 hover:bg-slate-800 active:scale-[0.99] text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-slate-900/25 flex items-center justify-center gap-2 transition-all disabled:opacity-50 mt-1 cursor-pointer"
+            >
+              {loading ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <span>INGRESAR AL SISTEMA</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+
+          </form>
+
+          <div className="pt-2 border-t border-slate-200/90">
+            <div className="text-center">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                o conéctate con nosotros
+              </span>
+            </div>
+
+            <div className="flex items-center justify-center gap-3 mt-1.5">
+              <a
+                href="https://wa.me/573000000000?text=Hola,%20deseo%20informaci%C3%B3n%20sobre%20DC%20Procesos"
+                target="_blank"
+                rel="noreferrer"
+                className="w-8 h-8 rounded-full border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 flex items-center justify-center transition-colors shadow-2xs"
+                title="WhatsApp Soporte"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+              </a>
+
+              <a
+                href="mailto:dcasesorias@gmail.com?subject=Consulta%20DC%20Procesos"
+                className="w-8 h-8 rounded-full border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 flex items-center justify-center transition-colors shadow-2xs"
+                title="Contacto Directo por Correo"
+              >
+                <Mail className="w-3.5 h-3.5" />
+              </a>
+            </div>
+
+            {/* Badge Legal Google reCAPTCHA v3 */}
+            <div className="mt-2 text-center text-[9px] text-slate-400 flex items-center justify-center gap-1">
+              <ShieldCheck className="w-3 h-3 text-slate-600 shrink-0" />
+              <span>Protegido con <strong>reCAPTCHA v3</strong> · </span>
+              <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-slate-600">Privacidad</a>
+              <span> y </span>
+              <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-slate-600">Condiciones</a>
+            </div>
           </div>
+
         </div>
 
       </div>

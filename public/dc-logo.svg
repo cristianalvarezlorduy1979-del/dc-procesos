@@ -7,9 +7,10 @@
     </radialGradient>
   </defs>
 
-  <!-- Fondo circular con borde esmeralda -->
-  <circle cx="256" cy="256" r="246" fill="url(#dcBgSolid)" stroke="#00df82" stroke-width="3" />
-  <circle cx="256" cy="256" r="234" fill="none" stroke="#00df82" stroke-width="1.5" stroke-dasharray="8 8" opacity="0.35" />
+  <!-- Fondo circular con fondo sólido garantizado y borde esmeralda -->
+  <circle cx="256" cy="256" r="246" fill="#021810" stroke="#00df82" stroke-width="4" />
+  <circle cx="256" cy="256" r="246" fill="url(#dcBgSolid)" opacity="0.8" />
+  <circle cx="256" cy="256" r="234" fill="none" stroke="#00df82" stroke-width="1.5" stroke-dasharray="8 8" opacity="0.45" />
 
   <!-- Cabezal digital de pesaje arriba -->
   <rect x="196" y="75" width="120" height="42" rx="10" fill="#021a12" stroke="#00df82" stroke-width="3" />

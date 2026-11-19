@@ -12,9 +12,10 @@ export default function DCLogo({ className = "w-52 h-52" }) {
           </radialGradient>
         </defs>
 
-        {/* Círculo base con borde esmeralda */}
-        <circle cx="256" cy="256" r="246" fill="url(#dcBgSolid)" stroke="#00df82" strokeWidth="3" />
-        <circle cx="256" cy="256" r="234" fill="none" stroke="#00df82" strokeWidth="1.5" strokeDasharray="8 8" opacity="0.35" />
+        {/* Círculo base con fondo sólido garantizado y borde esmeralda neón */}
+        <circle cx="256" cy="256" r="246" fill="#021810" stroke="#00df82" strokeWidth="4" />
+        <circle cx="256" cy="256" r="246" fill="url(#dcBgSolid)" opacity="0.8" />
+        <circle cx="256" cy="256" r="234" fill="none" stroke="#00df82" strokeWidth="1.5" strokeDasharray="8 8" opacity="0.45" />
 
         {/* Cabezal digital de pesaje arriba */}
         <rect x="196" y="75" width="120" height="42" rx="10" fill="#021a12" stroke="#00df82" strokeWidth="3" />
