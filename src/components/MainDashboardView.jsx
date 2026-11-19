@@ -267,43 +267,43 @@ export default function MainDashboardView({
 
         </div>
 
-        {/* Fila Inferior: Cuadrícula de Datos Corporativos (Pills de Metadatos) */}
+        {/* Fila Inferior: Cuadrícula de Datos Corporativos (Pills de Metadatos - Sin Negrita) */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 pt-1">
           <div className="border border-slate-200/90 rounded-xl p-2.5 bg-slate-50/40">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+            <p className="text-[10px] font-normal uppercase tracking-wider text-slate-500 flex items-center gap-1">
               🏢 NOMBRE DE LA EMPRESA
             </p>
-            <p className="text-xs font-black text-slate-800 truncate mt-0.5">{companyName}</p>
+            <p className="text-xs font-normal text-slate-700 truncate mt-0.5">{companyName}</p>
           </div>
           <div className="border border-slate-200/90 rounded-xl p-2.5 bg-slate-50/40">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+            <p className="text-[10px] font-normal uppercase tracking-wider text-slate-500 flex items-center gap-1">
               📑 NIT
             </p>
-            <p className="text-xs font-black text-slate-800 font-mono truncate mt-0.5">{companyNit}</p>
+            <p className="text-xs font-normal text-slate-700 font-mono truncate mt-0.5">{companyNit}</p>
           </div>
           <div className="border border-slate-200/90 rounded-xl p-2.5 bg-slate-50/40">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+            <p className="text-[10px] font-normal uppercase tracking-wider text-slate-500 flex items-center gap-1">
               ✉ CORREO VINCULADO
             </p>
-            <p className="text-xs font-black text-slate-800 truncate mt-0.5">{companyEmail}</p>
+            <p className="text-xs font-normal text-slate-700 truncate mt-0.5">{companyEmail}</p>
           </div>
           <div className="border border-slate-200/90 rounded-xl p-2.5 bg-slate-50/40">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+            <p className="text-[10px] font-normal uppercase tracking-wider text-slate-500 flex items-center gap-1">
               📞 TELÉFONO / WHATSAPP
             </p>
-            <p className="text-xs font-black text-slate-800 font-mono truncate mt-0.5">{companyPhone}</p>
+            <p className="text-xs font-normal text-slate-700 font-mono truncate mt-0.5">{companyPhone}</p>
           </div>
           <div className="border border-slate-200/90 rounded-xl p-2.5 bg-slate-50/40">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+            <p className="text-[10px] font-normal uppercase tracking-wider text-slate-500 flex items-center gap-1">
               👤 CONTACTO / ADMIN
             </p>
-            <p className="text-xs font-black text-slate-800 truncate mt-0.5">{companyContact}</p>
+            <p className="text-xs font-normal text-slate-700 truncate mt-0.5">{companyContact}</p>
           </div>
           <div className="border border-slate-200/90 rounded-xl p-2.5 bg-slate-50/40">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+            <p className="text-[10px] font-normal uppercase tracking-wider text-slate-500 flex items-center gap-1">
               📍 DIRECCIÓN
             </p>
-            <p className="text-xs font-black text-slate-800 truncate mt-0.5">{companyAddress}</p>
+            <p className="text-xs font-normal text-slate-700 truncate mt-0.5">{companyAddress}</p>
           </div>
         </div>
 
@@ -314,10 +314,10 @@ export default function MainDashboardView({
       {/* ========================================================================= */}
       <div className="bg-white border border-slate-300/80 rounded-2xl p-2.5 sm:p-3 shadow-2xs flex flex-wrap items-center justify-between gap-3">
         
-        {/* Izquierda: Botones de los Módulos */}
+        {/* Izquierda: Botones de los Módulos Reordenados */}
         <div className="flex flex-wrap items-center gap-2">
           
-          {/* Módulo 1: Producción y Rendimientos */}
+          {/* 1. Módulo: Órdenes de Proceso */}
           {activeMainModule === 'production' ? (
             <div className="bg-[#4338ca] text-white rounded-xl px-4 py-2.5 shadow-md flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
@@ -342,57 +342,7 @@ export default function MainDashboardView({
             </button>
           )}
 
-          {/* Módulo Insumos y Materias Primas */}
-          {activeMainModule === 'insumos' ? (
-            <div className="bg-[#4338ca] text-white rounded-xl px-4 py-2.5 shadow-md flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
-                <Boxes className="w-4 h-4 text-white" />
-              </div>
-              <div className="text-left leading-tight">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-200">MATERIAS PRIMAS & COSTOS</p>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs sm:text-sm font-black">Insumos</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 font-mono">{inventoryItems.length}</span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <button
-              onClick={() => setActiveMainModule('insumos')}
-              className="px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 font-bold text-xs sm:text-sm flex items-center gap-2 shadow-2xs transition"
-            >
-              <Boxes className="w-4 h-4 text-slate-600" />
-              <span>Insumos</span>
-              <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-mono">{inventoryItems.length}</span>
-            </button>
-          )}
-
-          {/* Módulo Inventarios Físicos */}
-          {activeMainModule === 'inventory' ? (
-            <div className="bg-[#4338ca] text-white rounded-xl px-4 py-2.5 shadow-md flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
-                <ClipboardList className="w-4 h-4 text-white" />
-              </div>
-              <div className="text-left leading-tight">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-200">TOMAS FÍSICAS</p>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs sm:text-sm font-black">Inventarios Físicos</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 font-mono">{physicalInventories.length}</span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <button
-              onClick={() => setActiveMainModule('inventory')}
-              className="px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 font-bold text-xs sm:text-sm flex items-center gap-2 shadow-2xs transition"
-            >
-              <ClipboardList className="w-4 h-4 text-slate-600" />
-              <span>Inventarios Físicos</span>
-              <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-mono">{physicalInventories.length}</span>
-            </button>
-          )}
-
-          {/* Módulo 3: Bajas & Desperdicios */}
+          {/* 2. Módulo: Bajas & Desperdicios */}
           {activeMainModule === 'waste' ? (
             <div className="bg-[#4338ca] text-white rounded-xl px-4 py-2.5 shadow-md flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
@@ -417,32 +367,57 @@ export default function MainDashboardView({
             </button>
           )}
 
-          {/* Módulo 4: Operarios */}
-          {activeMainModule === 'operators' ? (
+          {/* 3. Módulo: Inventarios Físicos */}
+          {activeMainModule === 'inventory' ? (
             <div className="bg-[#4338ca] text-white rounded-xl px-4 py-2.5 shadow-md flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
-                <Users className="w-4 h-4 text-white" />
+                <ClipboardList className="w-4 h-4 text-white" />
               </div>
               <div className="text-left leading-tight">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-200">PERSONAL DE PLANTA</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-200">TOMAS FÍSICAS</p>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs sm:text-sm font-black">Operarios Lite</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 font-mono">{operators.length}</span>
+                  <span className="text-xs sm:text-sm font-black">Inventarios Físicos</span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 font-mono">{physicalInventories.length}</span>
                 </div>
               </div>
             </div>
           ) : (
             <button
-              onClick={() => setActiveMainModule('operators')}
+              onClick={() => setActiveMainModule('inventory')}
               className="px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 font-bold text-xs sm:text-sm flex items-center gap-2 shadow-2xs transition"
             >
-              <Users className="w-4 h-4 text-slate-600" />
-              <span>Operarios</span>
-              <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-mono">{operators.length}</span>
+              <ClipboardList className="w-4 h-4 text-slate-600" />
+              <span>Inventarios Físicos</span>
+              <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-mono">{physicalInventories.length}</span>
             </button>
           )}
 
-          {/* Módulo 5: Catálogo de Procesos */}
+          {/* 4. Módulo: Insumos */}
+          {activeMainModule === 'insumos' ? (
+            <div className="bg-[#4338ca] text-white rounded-xl px-4 py-2.5 shadow-md flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+                <Boxes className="w-4 h-4 text-white" />
+              </div>
+              <div className="text-left leading-tight">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-200">MATERIAS PRIMAS & COSTOS</p>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs sm:text-sm font-black">Insumos</span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 font-mono">{inventoryItems.length}</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setActiveMainModule('insumos')}
+              className="px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 font-bold text-xs sm:text-sm flex items-center gap-2 shadow-2xs transition"
+            >
+              <Boxes className="w-4 h-4 text-slate-600" />
+              <span>Insumos</span>
+              <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-mono">{inventoryItems.length}</span>
+            </button>
+          )}
+
+          {/* 5. Módulo: Catálogo de Procesos */}
           {activeMainModule === 'templates' ? (
             <div className="bg-[#4338ca] text-white rounded-xl px-4 py-2.5 shadow-md flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
@@ -464,6 +439,31 @@ export default function MainDashboardView({
               <Layers className="w-4 h-4 text-slate-600" />
               <span>Catálogo de Procesos</span>
               <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-mono">{processTemplates.length}</span>
+            </button>
+          )}
+
+          {/* 6. Módulo: Operarios */}
+          {activeMainModule === 'operators' ? (
+            <div className="bg-[#4338ca] text-white rounded-xl px-4 py-2.5 shadow-md flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+                <Users className="w-4 h-4 text-white" />
+              </div>
+              <div className="text-left leading-tight">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-200">PERSONAL DE PLANTA</p>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs sm:text-sm font-black">Operarios</span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20 font-mono">{operators.length}</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setActiveMainModule('operators')}
+              className="px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 font-bold text-xs sm:text-sm flex items-center gap-2 shadow-2xs transition"
+            >
+              <Users className="w-4 h-4 text-slate-600" />
+              <span>Operarios</span>
+              <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-mono">{operators.length}</span>
             </button>
           )}
 
